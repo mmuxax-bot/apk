@@ -4,6 +4,11 @@ let learnedVerbs = JSON.parse(localStorage.getItem('learnedVerbs') || '[]');
 let learnedDialogues = JSON.parse(localStorage.getItem('learnedDialogues') || '[]');
 let answeredQuestions = JSON.parse(localStorage.getItem('answeredQuestions') || '[]');
 
+// Cari mövqe indeksləri (bölmə daxilində irəli/geri getmək üçün)
+let currentVerbIndex = 0;
+let currentDialogueIndex = 0;
+let currentQuestionIndex = 0;
+
 // ==================== UTILITY FUNCTIONS ====================
 function saveLearnedVerbs() { localStorage.setItem('learnedVerbs', JSON.stringify(learnedVerbs)); }
 function saveLearnedDialogues() { localStorage.setItem('learnedDialogues', JSON.stringify(learnedDialogues)); }
@@ -20,6 +25,9 @@ function resetAllProgress() {
     learnedVerbs = [];
     learnedDialogues = [];
     answeredQuestions = [];
+    currentVerbIndex = 0;
+    currentDialogueIndex = 0;
+    currentQuestionIndex = 0;
     showMainMenu();
 }
 
@@ -33,6 +41,12 @@ function normalizeArabic(str) {
         .toLowerCase();
 }
 
+function clampIndex(index, length) {
+    if (index < 0) return 0;
+    if (index > length - 1) return length - 1;
+    return index;
+}
+
 // ==================== RENDER FUNCTIONS ====================
 function showMainMenu() {
     document.getElementById('content-area').innerHTML = '';
@@ -41,23 +55,30 @@ function showMainMenu() {
 }
 
 // Feillər bölməsi
-function showVerbsSection() {
-    const verb = getNextUnlearnedVerb();
+function showVerbsSection(index) {
     const content = document.getElementById('content-area');
     content.style.display = 'block';
     document.getElementById('main-menu').style.display = 'none';
 
-    if (!verb) {
-        content.innerHTML = `
-            <div class="glass-card text-center">
-                <p style="font-size: 2rem; margin-bottom: 16px;">🎉</p>
-                <h2 class="text-xl font-bold mb-2">Bütün feilləri öyrəndiniz!</h2>
-                <p class="text-white-75 mb-4">Yeni feil əlavə edildikdə burada görünəcək.</p>
-                <button onclick="resetAllProgress()" class="glass-button px-6 py-3">Proqressi sıfırla</button>
-            </div>
-        `;
-        return;
+    if (index === undefined) {
+        const nextUnlearned = getNextUnlearnedVerb();
+        if (!nextUnlearned) {
+            content.innerHTML = `
+                <div class="glass-card text-center">
+                    <p style="font-size: 2rem; margin-bottom: 16px;">🎉</p>
+                    <h2 class="text-xl font-bold mb-2">Bütün feilləri öyrəndiniz!</h2>
+                    <p class="text-white-75 mb-4">Yeni feil əlavə edildikdə burada görünəcək.</p>
+                    <button onclick="resetAllProgress()" class="glass-button px-6 py-3">Proqressi sıfırla</button>
+                </div>
+            `;
+            return;
+        }
+        index = verbsData.findIndex(v => v.id === nextUnlearned.id);
     }
+    index = clampIndex(index, verbsData.length);
+    currentVerbIndex = index;
+    const verb = verbsData[currentVerbIndex];
+    const isLearned = learnedVerbs.includes(verb.id);
 
     let formsHtml = '';
     const formLabels = { past: 'Keçmiş', present: 'İndiki', imperative: 'Əmr' };
@@ -80,6 +101,7 @@ function showVerbsSection() {
                 </div>
                 <button onclick="showMainMenu()" class="close-btn">✕</button>
             </div>
+            <div class="progress-text">${currentVerbIndex + 1} / ${verbsData.length}</div>
             <div class="text-center mb-4">
                 <p class="arabic-text text-4xl font-bold mb-2">${verb.arabic}</p>
                 <p class="text-white-75 text-lg">${verb.meaning}</p>
@@ -88,9 +110,19 @@ function showVerbsSection() {
                 <h3 class="font-semibold mb-2">Formalar</h3>
                 <div>${formsHtml}</div>
             </div>
-            <button onclick="markVerbLearned(${verb.id})" class="glass-button py-3 font-bold text-lg">✓ Öyrəndim</button>
+            <button onclick="markVerbLearned(${verb.id})" class="glass-button py-3 font-bold text-lg">
+                ${isLearned ? '✓ Öyrənilib' : '✓ Öyrəndim'}
+            </button>
+            <div class="nav-row">
+                <button onclick="navigateVerb(-1)" class="glass-button" ${currentVerbIndex === 0 ? 'disabled' : ''}>◀ Əvvəlki</button>
+                <button onclick="navigateVerb(1)" class="glass-button" ${currentVerbIndex === verbsData.length - 1 ? 'disabled' : ''}>Növbəti ▶</button>
+            </div>
         </div>
     `;
+}
+
+function navigateVerb(delta) {
+    showVerbsSection(currentVerbIndex + delta);
 }
 
 function openFormExamples(verbId, formKey) {
@@ -115,14 +147,14 @@ function openFormExamples(verbId, formKey) {
         <div class="glass-card fade-in">
             <div class="flex-between mb-4">
                 <h2 class="text-xl font-bold">Nümunə Cümlələr</h2>
-                <button onclick="showVerbsSection()" class="close-btn">✕</button>
+                <button onclick="showVerbsSection(${currentVerbIndex})" class="close-btn">✕</button>
             </div>
             <div class="text-center mb-4">
                 <p class="arabic-text text-3xl font-bold">${formData.arabic}</p>
                 <p class="text-white-75">${verb.meaning} (${formData.translation})</p>
             </div>
             ${examplesHtml}
-            <button onclick="showVerbsSection()" class="glass-button py-3 font-bold mt-3">Geri</button>
+            <button onclick="showVerbsSection(${currentVerbIndex})" class="glass-button py-3 font-bold mt-3">Geri</button>
         </div>
     `;
 }
@@ -132,27 +164,38 @@ function markVerbLearned(id) {
         learnedVerbs.push(id);
         saveLearnedVerbs();
     }
-    showVerbsSection();
+    if (currentVerbIndex < verbsData.length - 1) {
+        showVerbsSection(currentVerbIndex + 1);
+    } else {
+        showVerbsSection(currentVerbIndex);
+    }
 }
 
 // Dialoqlar bölməsi
-function showDialoguesSection() {
-    const dialogue = getNextUnlearnedDialogue();
+function showDialoguesSection(index) {
     const content = document.getElementById('content-area');
     content.style.display = 'block';
     document.getElementById('main-menu').style.display = 'none';
 
-    if (!dialogue) {
-        content.innerHTML = `
-            <div class="glass-card text-center">
-                <p style="font-size: 2rem; margin-bottom: 16px;">🎉</p>
-                <h2 class="text-xl font-bold mb-2">Bütün dialoqları öyrəndiniz!</h2>
-                <p class="text-white-75 mb-4">Yeni dialoq əlavə edildikdə burada görünəcək.</p>
-                <button onclick="resetAllProgress()" class="glass-button px-6 py-3">Proqressi sıfırla</button>
-            </div>
-        `;
-        return;
+    if (index === undefined) {
+        const nextUnlearned = getNextUnlearnedDialogue();
+        if (!nextUnlearned) {
+            content.innerHTML = `
+                <div class="glass-card text-center">
+                    <p style="font-size: 2rem; margin-bottom: 16px;">🎉</p>
+                    <h2 class="text-xl font-bold mb-2">Bütün dialoqları öyrəndiniz!</h2>
+                    <p class="text-white-75 mb-4">Yeni dialoq əlavə edildikdə burada görünəcək.</p>
+                    <button onclick="resetAllProgress()" class="glass-button px-6 py-3">Proqressi sıfırla</button>
+                </div>
+            `;
+            return;
+        }
+        index = dialoguesData.findIndex(d => d.id === nextUnlearned.id);
     }
+    index = clampIndex(index, dialoguesData.length);
+    currentDialogueIndex = index;
+    const dialogue = dialoguesData[currentDialogueIndex];
+    const isLearned = learnedDialogues.includes(dialogue.id);
 
     let dialogueHtml = '';
     dialogue.dialogue.forEach((line) => {
@@ -170,15 +213,26 @@ function showDialoguesSection() {
                 <h2 class="text-2xl font-bold">${dialogue.title}</h2>
                 <button onclick="showMainMenu()" class="close-btn">✕</button>
             </div>
+            <div class="progress-text">${currentDialogueIndex + 1} / ${dialoguesData.length}</div>
             <div class="text-right mb-2">
                 <button class="translation-toggle" onclick="toggleTranslations(this)">Tərcümələri gizlət</button>
             </div>
             <div class="mb-4">
                 ${dialogueHtml}
             </div>
-            <button onclick="markDialogueLearned(${dialogue.id})" class="glass-button py-3 font-bold text-lg">✓ Öyrəndim</button>
+            <button onclick="markDialogueLearned(${dialogue.id})" class="glass-button py-3 font-bold text-lg">
+                ${isLearned ? '✓ Öyrənilib' : '✓ Öyrəndim'}
+            </button>
+            <div class="nav-row">
+                <button onclick="navigateDialogue(-1)" class="glass-button" ${currentDialogueIndex === 0 ? 'disabled' : ''}>◀ Əvvəlki</button>
+                <button onclick="navigateDialogue(1)" class="glass-button" ${currentDialogueIndex === dialoguesData.length - 1 ? 'disabled' : ''}>Növbəti ▶</button>
+            </div>
         </div>
     `;
+}
+
+function navigateDialogue(delta) {
+    showDialoguesSection(currentDialogueIndex + delta);
 }
 
 function toggleTranslations(btn) {
@@ -200,27 +254,44 @@ function markDialogueLearned(id) {
         learnedDialogues.push(id);
         saveLearnedDialogues();
     }
-    showDialoguesSection();
+    if (currentDialogueIndex < dialoguesData.length - 1) {
+        showDialoguesSection(currentDialogueIndex + 1);
+    } else {
+        showDialoguesSection(currentDialogueIndex);
+    }
 }
 
 // Testlər bölməsi
-function showTestsSection() {
-    const question = getNextUnansweredQuestion();
+function showTestsSection(index) {
     const content = document.getElementById('content-area');
     content.style.display = 'block';
     document.getElementById('main-menu').style.display = 'none';
 
-    if (!question) {
-        content.innerHTML = `
-            <div class="glass-card text-center">
-                <p style="font-size: 2rem; margin-bottom: 16px;">🏆</p>
-                <h2 class="text-xl font-bold mb-2">Test tamamlandı!</h2>
-                <p class="text-white-75 mb-4">Bütün suallara düzgün cavab verdiniz.</p>
-                <button onclick="resetAllProgress()" class="glass-button px-6 py-3">Proqressi sıfırla</button>
-            </div>
-        `;
-        return;
+    if (index === undefined) {
+        const nextUnanswered = getNextUnansweredQuestion();
+        if (!nextUnanswered) {
+            content.innerHTML = `
+                <div class="glass-card text-center">
+                    <p style="font-size: 2rem; margin-bottom: 16px;">🏆</p>
+                    <h2 class="text-xl font-bold mb-2">Test tamamlandı!</h2>
+                    <p class="text-white-75 mb-4">Bütün suallara düzgün cavab verdiniz.</p>
+                    <button onclick="resetAllProgress()" class="glass-button px-6 py-3">Proqressi sıfırla</button>
+                </div>
+            `;
+            return;
+        }
+        index = questionsData.findIndex(q => q.id === nextUnanswered.id);
     }
+    index = clampIndex(index, questionsData.length);
+    currentQuestionIndex = index;
+    const question = questionsData[currentQuestionIndex];
+
+    const navRowHtml = `
+        <div class="nav-row">
+            <button onclick="navigateQuestion(-1)" class="glass-button" ${currentQuestionIndex === 0 ? 'disabled' : ''}>◀ Əvvəlki</button>
+            <button onclick="navigateQuestion(1)" class="glass-button" ${currentQuestionIndex === questionsData.length - 1 ? 'disabled' : ''}>Növbəti ▶</button>
+        </div>
+    `;
 
     if (question.type === 'choice') {
         let optionsHtml = '';
@@ -238,10 +309,12 @@ function showTestsSection() {
                     <h2 class="text-xl font-bold">Test sualı</h2>
                     <button onclick="showMainMenu()" class="close-btn">✕</button>
                 </div>
+                <div class="progress-text">${currentQuestionIndex + 1} / ${questionsData.length}</div>
                 <p class="text-lg mb-4">${question.question}</p>
                 <div class="mb-4">${optionsHtml}</div>
                 <button onclick="checkChoiceAnswer(${question.id})" class="glass-button py-3 font-bold">Cavabı yoxla</button>
                 <div id="feedback-${question.id}" class="feedback"></div>
+                ${navRowHtml}
             </div>
         `;
     } else if (question.type === 'input') {
@@ -251,13 +324,19 @@ function showTestsSection() {
                     <h2 class="text-xl font-bold">Boşluğu doldur</h2>
                     <button onclick="showMainMenu()" class="close-btn">✕</button>
                 </div>
+                <div class="progress-text">${currentQuestionIndex + 1} / ${questionsData.length}</div>
                 <p class="text-lg mb-4">${question.question}</p>
                 <input type="text" id="input-${question.id}" class="input-field mb-4" placeholder="Cavabınızı yazın" autocomplete="off">
                 <button onclick="checkInputAnswer(${question.id})" class="glass-button py-3 font-bold">Cavabı yoxla</button>
                 <div id="feedback-${question.id}" class="feedback"></div>
+                ${navRowHtml}
             </div>
         `;
     }
+}
+
+function navigateQuestion(delta) {
+    showTestsSection(currentQuestionIndex + delta);
 }
 
 function checkChoiceAnswer(qid) {
@@ -275,9 +354,15 @@ function checkChoiceAnswer(qid) {
             answeredQuestions.push(qid);
             saveAnsweredQuestions();
         }
-        setTimeout(() => showTestsSection(), 1200);
+        setTimeout(() => showTestsSection(currentQuestionIndex + 1), 1200);
     } else {
-        feedback.innerHTML = '<span class="error">❌ Səhvdir, yenidən cəhd edin.</span>';
+        feedback.innerHTML = `
+            <span class="error">❌ Səhvdir, yenidən cəhd edin.</span>
+            <div class="correct-answer-box">
+                <span class="text-white-75" style="font-size: 0.85rem;">Düzgün cavab:</span>
+                <p class="arabic-text">${question.options[question.correct]}</p>
+            </div>
+        `;
     }
 }
 
@@ -297,16 +382,22 @@ function checkInputAnswer(qid) {
             answeredQuestions.push(qid);
             saveAnsweredQuestions();
         }
-        setTimeout(() => showTestsSection(), 1200);
+        setTimeout(() => showTestsSection(currentQuestionIndex + 1), 1200);
     } else {
-        feedback.innerHTML = '<span class="error">❌ Səhvdir, yenidən cəhd edin.</span>';
+        feedback.innerHTML = `
+            <span class="error">❌ Səhvdir, yenidən cəhd edin.</span>
+            <div class="correct-answer-box">
+                <span class="text-white-75" style="font-size: 0.85rem;">Düzgün cavab:</span>
+                <p class="arabic-text">${question.correctAnswer}</p>
+            </div>
+        `;
     }
 }
 
 // ==================== EVENT LISTENERS ====================
-document.getElementById('btn-verbs').addEventListener('click', showVerbsSection);
-document.getElementById('btn-dialogues').addEventListener('click', showDialoguesSection);
-document.getElementById('btn-tests').addEventListener('click', showTestsSection);
+document.getElementById('btn-verbs').addEventListener('click', () => showVerbsSection());
+document.getElementById('btn-dialogues').addEventListener('click', () => showDialoguesSection());
+document.getElementById('btn-tests').addEventListener('click', () => showTestsSection());
 
 // Başlanğıcda ana menyunu göstər
 showMainMenu();
