@@ -12,14 +12,12 @@
     <meta name="apple-mobile-web-app-title" content="Hər Gün Ərəbcə">
     <link rel="icon" href="icons/icon-192.png">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-1: #0F5973;
             --bg-2: #134467;
             --bg-3: #0E223B;
+            --arabic-scale: 1;
             --text-color: #ffffff;
             --text-75: rgba(255,255,255,0.75);
             --text-50: rgba(255,255,255,0.5);
@@ -112,13 +110,17 @@
         .glass-button:hover { background: var(--overlay-25); }
         .menu-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
         .arabic-text {
-            font-family: 'Noto Naskh Arabic', 'Amiri', 'Traditional Arabic', 'Scheherazade New', serif;
-            font-size: 1.8rem;
-            line-height: 2.2rem;
+            font-family: 'Traditional Arabic', 'Scheherazade New', 'Amiri', serif;
+            font-size: calc(1.8rem * var(--arabic-scale, 1));
+            line-height: calc(2.2rem * var(--arabic-scale, 1));
             direction: rtl;
             text-align: right;
             unicode-bidi: isolate;
         }
+        .arabic-text.text-lg { font-size: calc(1.125rem * var(--arabic-scale, 1)); line-height: calc(1.5rem * var(--arabic-scale, 1)); }
+        .arabic-text.text-2xl { font-size: calc(1.5rem * var(--arabic-scale, 1)); line-height: calc(1.9rem * var(--arabic-scale, 1)); }
+        .arabic-text.text-3xl { font-size: calc(1.875rem * var(--arabic-scale, 1)); line-height: calc(2.2rem * var(--arabic-scale, 1)); }
+        .arabic-text.text-4xl { font-size: calc(2.25rem * var(--arabic-scale, 1)); line-height: calc(2.6rem * var(--arabic-scale, 1)); }
         .input-field {
             background: var(--overlay-08);
             border: 1px solid var(--overlay-35);
@@ -342,7 +344,7 @@
         .match-tile.selected { background: rgba(59,130,246,0.35); border-color: rgba(96,165,250,0.8); }
         .match-tile.matched { background: rgba(74,222,128,0.25); border-color: rgba(74,222,128,0.6); opacity: 0.6; cursor: default; }
         .match-tile.mismatch { background: rgba(248,113,113,0.35); border-color: rgba(248,113,113,0.8); }
-        .match-tile .arabic-text { font-size: 1.2rem; }
+        .match-tile .arabic-text { font-size: calc(1.2rem * var(--arabic-scale, 1)); }
 
         /* Flash kartlar */
         .flashcard-scene { perspective: 1200px; margin-bottom: 16px; }
@@ -428,105 +430,6 @@
         }
         .notif-status { font-size: 0.78rem; color: var(--text-50); margin-top: 4px; }
         .notif-test-btn { margin-top: 10px; }
-        .search-box {
-            width: 100%;
-            background: var(--overlay-08);
-            border: 1px solid var(--overlay-25);
-            border-radius: 14px;
-            color: var(--text-color);
-            padding: 12px 16px;
-            font-size: 0.95rem;
-            outline: none;
-            margin-bottom: 12px;
-        }
-        .search-box:focus { border-color: rgba(96,165,250,0.7); background: var(--overlay-15); }
-        .search-box::placeholder { color: var(--text-50); }
-        .tts-btn {
-            background: var(--overlay-15);
-            border: 1px solid var(--overlay-25);
-            border-radius: 50%;
-            width: 36px;
-            height: 36px;
-            font-size: 1rem;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-color);
-            flex-shrink: 0;
-        }
-        .tts-btn:hover { background: var(--overlay-25); }
-        .tts-btn:active { transform: scale(0.95); }
-        .filter-row {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-        }
-        .filter-chip {
-            background: var(--overlay-08);
-            border: 1px solid var(--overlay-20);
-            border-radius: 20px;
-            padding: 6px 14px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            color: var(--text-75);
-            transition: all 0.2s;
-        }
-        .filter-chip.active {
-            background: rgba(59,130,246,0.3);
-            border-color: rgba(96,165,250,0.7);
-            color: var(--text-color);
-            font-weight: 600;
-        }
-        .verb-list-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            border-radius: 14px;
-            background: var(--overlay-03);
-            margin-bottom: 8px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .verb-list-item:hover { background: var(--overlay-10); }
-        .verb-list-item .arabic-text { font-size: 1.3rem; flex: 1; text-align: right; }
-        .verb-list-item .meaning { font-size: 0.85rem; color: var(--text-75); min-width: 90px; }
-        .verb-list-item .status-dot {
-            width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
-        }
-        .status-dot.learned { background: #4ade80; }
-        .status-dot.unlearned { background: var(--overlay-35); }
-        .status-dot.favorite { background: #facc15; }
-        .list-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .mini-btn {
-            background: var(--overlay-15);
-            border: 1px solid var(--overlay-25);
-            border-radius: 10px;
-            padding: 6px 12px;
-            font-size: 0.8rem;
-            color: var(--text-color);
-            cursor: pointer;
-        }
-        .mini-btn:hover { background: var(--overlay-25); }
-        .export-btn {
-            background: rgba(59,130,246,0.2);
-            border: 1px solid rgba(96,165,250,0.5);
-            border-radius: 12px;
-            padding: 10px 14px;
-            font-size: 0.85rem;
-            color: var(--text-color);
-            cursor: pointer;
-            width: 100%;
-            margin-top: 8px;
-        }
-        .export-btn:hover { background: rgba(59,130,246,0.3); }
     </style>
 </head>
 <body>

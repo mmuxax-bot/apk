@@ -4,11 +4,20 @@
 
 ## Bölmələr
 
-- **Feillər** — 350 ərəbcə feil (keçmiş, indiki, əmr formaları və nümunə cümlələrlə), favoritə əlavə etmək mümkündür
+- **Feillər** — 350 ərəbcə feil (keçmiş, indiki, əmr formaları və nümunə cümlələrlə), favoritə əlavə etmək və 🔍 axtarış mümkündür
 - **Dialoqlar** — 300 gündəlik dialoq nümunəsi
-- **Testlər** — Adi test, Sürətli cavab rejimi və Söz birləşdirmə oyunu
-- **Flash kartlar** — Bütün sözlər / Öyrənilməmişlər / Favoritlər üzrə kart-çevirmə məşqi
-- **Statistika** — öyrənilən sözlər, dialoqlar, testlər, uğur faizi, davamlılıq seriyası, nişanlar
+- **Testlər** — Adi test, Sürətli cavab, Söz birləşdirmə və "Çətin suallar" təkrarı
+- **Flash kartlar** — Ağıllı təkrar (SRS), Çətin sözlər, Bütün sözlər, Öyrənilməmişlər, Favoritlər
+- **Statistika** — öyrənilən sözlər/dialoqlar/testlər, uğur faizi, seriya, nişanlar, ayarlar (şrift ölçüsü, hərəkəsiz oxu), bildirişlər
+
+## Əlavə funksiyalar
+
+- **🔍 Axtarış** — Feillər bölməsində 🔍 ikonuna basıb ərəbcə və ya azərbaycanca yazaraq istənilən sözü tez tapmaq
+- **🧠 Ağıllı təkrar (Spaced Repetition)** — Flash kartlarda "Bilirdim/Bilmirdim" cavablarına görə hər söz üçün fərdi təkrar intervalı hesablanır (bilməyəni tez-tez, bildiyini seyrək göstərir)
+- **🔤 Şrift ölçüsü** — Statistika → Ayarlar bölməsində sürüşdürücü ilə ərəb mətninin ölçüsünü dəyişmək
+- **👁️ Hərəkəsiz oxu rejimi** — Statistika → Ayarlar bölməsində keçid, aktiv olanda bütün ərəb mətnlərindən hərəkələr gizlədilir
+- **❌ Mənim Səhvlərim** — Testlərdə və ya flash kartlarda səhv cavablandırılan sözlər/suallar avtomatik toplanır; Testlər → "Çətin suallar" və Flash kartlar → "Çətin sözlər" bölmələrindən təkrar edilə bilər
+- **🎯 Gündəlik hədəf** — Ana səhifədə vizual halqa (progress ring) ilə günlük XP hədəfinizi (20/50/100 XP) izləmək
 
 ## İstifadə
 
@@ -46,14 +55,4 @@ Statistika səhifəsində "🔔 Günlük xatırlatma" bölməsindən aktivləşd
 
 ## Versiya
 
-Cari versiya: **v1.1.0**
-
-### v1.1.0 yenilikləri
-- Ərəbcə tələffüz (🔊 TTS) — feillər, nümunə cümlələr və dialoqlarda
-- Feillər və dialoqlar üçün axtarış + filtr (öyrənilmiş / öyrənilməmiş / favorit)
-- Siyahı görünüşü (☰) — bütün feil və dialoqlara tez baxış
-- Proqressi JSON kimi yükləmə / ixrac etmə (statistika səhifəsində)
-- Daha yaxşı ərəbcə şrifti (Noto Naskh Arabic + Amiri)
-- Service Worker keş versiyası yeniləndi
-
-Ekranın altında versiya göstərilir. Yeni funksiya əlavə olunanda "Kiçik" rəqəm (`v1.2.0`), xəta düzəlişində "Düzəliş" rəqəmi (`v1.1.1`) artacaq.
+Cari versiya ekranın altında göstərilir (məs. `v1.0.0`). Sistem hələ real istifadəyə verilmədiyi üçün versiya `v1.0.0`-da saxlanılır; rəsmi istifadəyə verildikdən sonra: yeni funksiya əlavə olunanda "Kiçik" rəqəm (`v1.1.0`), xəta düzəlişində "Düzəliş" rəqəmi (`v1.0.1`) artacaq.

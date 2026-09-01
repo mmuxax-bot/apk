@@ -1,5 +1,5 @@
 // app.js
-const APP_VERSION = '1.1.1';
+const APP_VERSION = '1.0.0';
 
 // ==================== STATE ====================
 let learnedVerbs = JSON.parse(localStorage.getItem('learnedVerbs') || '[]');
@@ -7,6 +7,13 @@ let learnedDialogues = JSON.parse(localStorage.getItem('learnedDialogues') || '[
 let answeredQuestions = JSON.parse(localStorage.getItem('answeredQuestions') || '[]');
 let favoriteVerbs = JSON.parse(localStorage.getItem('favoriteVerbs') || '[]');
 let notificationSettings = JSON.parse(localStorage.getItem('notificationSettings') || '{"enabled":false,"time":"19:00","lastNotifiedDate":null}');
+let hideHarakat = localStorage.getItem('hideHarakat') === 'true';
+let arabicFontScale = parseFloat(localStorage.getItem('arabicFontScale') || '1');
+let dailyGoalXp = parseInt(localStorage.getItem('dailyGoalXp') || '50', 10);
+let dailyXpLog = JSON.parse(localStorage.getItem('dailyXpLog') || '{}');
+let difficultVerbs = JSON.parse(localStorage.getItem('difficultVerbs') || '[]');
+let difficultQuestions = JSON.parse(localStorage.getItem('difficultQuestions') || '[]');
+let srsData = JSON.parse(localStorage.getItem('srsData') || '{}');
 
 // Cari mövqe indeksləri (bölmə daxilində irəli/geri getmək üçün)
 let currentVerbIndex = 0;
@@ -63,6 +70,29 @@ function updateStreakOnVisit() {
 function addXp(amount) {
     xp += amount;
     localStorage.setItem('xp', String(xp));
+
+    const today = todayStr();
+    dailyXpLog[today] = (dailyXpLog[today] || 0) + amount;
+    // Yalnız son 14 günü saxla, köhnə qeydləri təmizlə
+    const keys = Object.keys(dailyXpLog).sort();
+    if (keys.length > 14) {
+        keys.slice(0, keys.length - 14).forEach(k => delete dailyXpLog[k]);
+    }
+    localStorage.setItem('dailyXpLog', JSON.stringify(dailyXpLog));
+}
+
+function getTodayXp() {
+    return dailyXpLog[todayStr()] || 0;
+}
+
+function setDailyGoal(value) {
+    dailyGoalXp = parseInt(value, 10);
+    localStorage.setItem('dailyGoalXp', String(dailyGoalXp));
+}
+
+function onDailyGoalChange(select) {
+    setDailyGoal(select.value);
+    renderHomeStats();
 }
 
 function getLevelInfo(currentXp) {
@@ -132,11 +162,35 @@ function renderHomeStats() {
     const xpForLevel = next ? next.xpRequired - current.xpRequired : xpIntoLevel || 1;
     const percent = next ? Math.min(100, Math.round((xpIntoLevel / xpForLevel) * 100)) : 100;
 
+    const todayXp = getTodayXp();
+    const goalPercent = Math.min(100, Math.round((todayXp / dailyGoalXp) * 100));
+    const circumference = 2 * Math.PI * 30;
+    const ringOffset = circumference * (1 - goalPercent / 100);
+    const goalOptions = [20, 50, 100].map(g =>
+        `<option value="${g}" ${dailyGoalXp === g ? 'selected' : ''}>${g} XP (~${Math.round(g / 3.3)} dəq)</option>`
+    ).join('');
+
     container.innerHTML = `
         <div class="stats-bar">
             <div class="stat-pill">🔥 ${streakData.currentStreak} gün</div>
             <div class="stat-pill">📗 ${learnedVerbs.length}/${verbsData.length}</div>
             <div class="stat-pill">⭐ ${current.name}</div>
+        </div>
+        <div class="notif-card" style="margin-top:0; margin-bottom:14px;">
+            <div style="display:flex; align-items:center; gap:14px;">
+                <svg width="70" height="70" viewBox="0 0 70 70" style="flex-shrink:0;">
+                    <circle cx="35" cy="35" r="30" stroke="var(--overlay-15)" stroke-width="6" fill="none"/>
+                    <circle cx="35" cy="35" r="30" stroke="#4ade80" stroke-width="6" fill="none"
+                        stroke-dasharray="${circumference}" stroke-dashoffset="${ringOffset}"
+                        stroke-linecap="round" transform="rotate(-90 35 35)"/>
+                    <text x="35" y="40" text-anchor="middle" font-size="14" fill="currentColor">${goalPercent}%</text>
+                </svg>
+                <div style="flex:1;">
+                    <div class="font-semibold mb-1">🎯 Gündəlik hədəf</div>
+                    <div class="text-white-75" style="font-size: 0.8rem; margin-bottom: 6px;">${todayXp} / ${dailyGoalXp} XP bu gün</div>
+                    <select class="notif-time-input" style="width:100%;" onchange="onDailyGoalChange(this)">${goalOptions}</select>
+                </div>
+            </div>
         </div>
         <div class="xp-bar-wrap">
             <div class="flex-between mb-1" style="font-size: 0.8rem;">
@@ -147,7 +201,7 @@ function renderHomeStats() {
         </div>
         <div class="daily-word-card" onclick="openDailyWord()">
             <div class="text-white-75" style="font-size: 0.75rem;">📅 Gündəlik söz</div>
-            <div class="arabic-text text-2xl">${dw.arabic}</div>
+            <div class="arabic-text text-2xl">${displayArabic(dw.arabic)}</div>
             <div class="text-white-75">${dw.meaning}</div>
         </div>
     `;
@@ -196,69 +250,12 @@ function showStatsSection() {
             <h3 class="font-semibold mb-2">Nişanlar</h3>
             <div class="badge-grid">${badgesHtml}</div>
 
+            ${renderSettingsCardHtml()}
             ${renderNotificationCardHtml()}
-
-            <div class="mt-4">
-                <button onclick="exportProgress()" class="export-btn">⬇️ Proqressi yüklə (JSON)</button>
-                <button onclick="document.getElementById('import-file').click()" class="export-btn" style="margin-top:8px;">⬆️ Proqressi yüklə</button>
-                <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="importProgress(event)">
-            </div>
 
             <button onclick="resetAllProgress()" class="glass-button mt-4" style="background: rgba(248,113,113,0.15); border-color: rgba(248,113,113,0.4);">Proqressi sıfırla</button>
         </div>
     `;
-}
-
-function exportProgress() {
-    const data = {
-        version: APP_VERSION,
-        exportedAt: new Date().toISOString(),
-        learnedVerbs,
-        learnedDialogues,
-        answeredQuestions,
-        favoriteVerbs,
-        xp,
-        earnedBadges,
-        testStats,
-        streakData,
-        theme: localStorage.getItem('theme') || 'dark',
-        notificationSettings
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `hergun-erebce-progress-${todayStr()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
-function importProgress(event) {
-    const file = event.target.files && event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        try {
-            const data = JSON.parse(e.target.result);
-            if (Array.isArray(data.learnedVerbs)) { learnedVerbs = data.learnedVerbs; saveLearnedVerbs(); }
-            if (Array.isArray(data.learnedDialogues)) { learnedDialogues = data.learnedDialogues; saveLearnedDialogues(); }
-            if (Array.isArray(data.answeredQuestions)) { answeredQuestions = data.answeredQuestions; saveAnsweredQuestions(); }
-            if (Array.isArray(data.favoriteVerbs)) { favoriteVerbs = data.favoriteVerbs; saveFavoriteVerbs(); }
-            if (typeof data.xp === 'number') { xp = data.xp; localStorage.setItem('xp', String(xp)); }
-            if (Array.isArray(data.earnedBadges)) { earnedBadges = data.earnedBadges; localStorage.setItem('earnedBadges', JSON.stringify(earnedBadges)); }
-            if (data.testStats) { testStats = data.testStats; localStorage.setItem('testStats', JSON.stringify(testStats)); }
-            if (data.streakData) { streakData = data.streakData; localStorage.setItem('streakData', JSON.stringify(streakData)); }
-            if (data.theme) { localStorage.setItem('theme', data.theme); applyTheme(data.theme); }
-            if (data.notificationSettings) { notificationSettings = data.notificationSettings; saveNotificationSettings(); }
-            checkBadges();
-            alert('Proqress uğurla yükləndi!');
-            showStatsSection();
-        } catch (err) {
-            alert('Fayl oxuna bilmədi. Düzgün JSON formatında olmalıdır.');
-        }
-    };
-    reader.readAsText(file);
-    event.target.value = '';
 }
 
 // ==================== UTILITY FUNCTIONS ====================
@@ -273,6 +270,35 @@ function toggleFavorite(id) {
         favoriteVerbs.push(id);
     }
     saveFavoriteVerbs();
+}
+
+// ==================== MƏNİM SƏHVLƏRİM (ÇƏTİN SÖZLƏR/SUALLAR) ====================
+function saveDifficultVerbs() { localStorage.setItem('difficultVerbs', JSON.stringify(difficultVerbs)); }
+function saveDifficultQuestions() { localStorage.setItem('difficultQuestions', JSON.stringify(difficultQuestions)); }
+
+function markVerbDifficult(id) {
+    if (!difficultVerbs.includes(id)) {
+        difficultVerbs.push(id);
+        saveDifficultVerbs();
+    }
+}
+function unmarkVerbDifficult(id) {
+    if (difficultVerbs.includes(id)) {
+        difficultVerbs = difficultVerbs.filter(x => x !== id);
+        saveDifficultVerbs();
+    }
+}
+function markQuestionDifficult(id) {
+    if (!difficultQuestions.includes(id)) {
+        difficultQuestions.push(id);
+        saveDifficultQuestions();
+    }
+}
+function unmarkQuestionDifficult(id) {
+    if (difficultQuestions.includes(id)) {
+        difficultQuestions = difficultQuestions.filter(x => x !== id);
+        saveDifficultQuestions();
+    }
 }
 
 function getNextUnlearnedVerb() { return verbsData.find(v => !learnedVerbs.includes(v.id)) || null; }
@@ -316,21 +342,30 @@ function resetAllProgress() {
     localStorage.removeItem('earnedBadges');
     localStorage.removeItem('testStats');
     localStorage.removeItem('streakData');
+    localStorage.removeItem('difficultVerbs');
+    localStorage.removeItem('difficultQuestions');
+    localStorage.removeItem('srsData');
+    localStorage.removeItem('dailyXpLog');
     learnedVerbs = [];
     learnedDialogues = [];
     answeredQuestions = [];
     xp = 0;
     earnedBadges = [];
     testStats = { attempts: 0, correct: 0 };
+    difficultVerbs = [];
+    difficultQuestions = [];
+    srsData = {};
+    dailyXpLog = {};
     currentVerbIndex = 0;
     currentDialogueIndex = 0;
     currentQuestionIndex = 0;
+    testDeck = questionsData;
+    testMode = 'normal';
     updateStreakOnVisit();
     showMainMenu();
 }
 
 function normalizeArabic(str) {
-    if (!str) return '';
     return str
         .replace(/[\u064B-\u0652\u0670\u0640]/g, '')
         .replace(/[أإآٱ]/g, 'ا')
@@ -340,104 +375,46 @@ function normalizeArabic(str) {
         .toLowerCase();
 }
 
+// ==================== HƏRƏKƏSIZ OXU REJIMI & ŞRİFT ÖLÇÜSÜ ====================
+function stripHarakat(text) {
+    return text.replace(/[\u064B-\u0652\u0670\u0640]/g, '');
+}
+
+function displayArabic(text) {
+    return hideHarakat ? stripHarakat(text) : text;
+}
+
+function setHideHarakat(value) {
+    hideHarakat = value;
+    localStorage.setItem('hideHarakat', String(value));
+}
+
+function toggleHideHarakatSetting(checkbox) {
+    setHideHarakat(checkbox.checked);
+    // Açıq olan istənilən ekranı təzələmək üçün ən sadə yol: statistika ekranını yenidən çək
+    showStatsSection();
+}
+
+function applyArabicFontScale() {
+    document.documentElement.style.setProperty('--arabic-scale', String(arabicFontScale));
+}
+
+function setArabicFontScale(value) {
+    arabicFontScale = parseFloat(value);
+    localStorage.setItem('arabicFontScale', String(arabicFontScale));
+    applyArabicFontScale();
+}
+
+function onArabicFontSliderChange(slider) {
+    setArabicFontScale(slider.value);
+    const label = document.getElementById('arabic-scale-label');
+    if (label) label.textContent = Math.round(arabicFontScale * 100) + '%';
+}
+
 function clampIndex(index, length) {
     if (index < 0) return 0;
     if (index > length - 1) return length - 1;
     return index;
-}
-
-// ==================== TTS (Tələffüz) ====================
-let cachedVoices = [];
-
-function loadVoices() {
-    if (typeof speechSynthesis === 'undefined') return [];
-    const voices = speechSynthesis.getVoices() || [];
-    if (voices.length) cachedVoices = voices;
-    return cachedVoices.length ? cachedVoices : voices;
-}
-
-if (typeof speechSynthesis !== 'undefined') {
-    speechSynthesis.onvoiceschanged = () => { loadVoices(); };
-    // Bəzi brauzerlərdə dərhal yükləməyə çalış
-    try { loadVoices(); } catch (e) {}
-}
-
-function speakArabic(text) {
-    if (!text) return;
-
-    // file:// protokolunda çox vaxt işləmir
-    if (typeof location !== 'undefined' && location.protocol === 'file:') {
-        alert('Səsli tələffüz yalnız internetdə (https) işləyir.\nGitHub Pages və ya digər saytda açın.');
-        return;
-    }
-
-    if (typeof window === 'undefined' || typeof speechSynthesis === 'undefined' || !window.speechSynthesis) {
-        alert('Bu brauzer səsli tələffüzü dəstəkləmir.\nChrome və ya Samsung Internet tövsiyə olunur.');
-        return;
-    }
-
-    try {
-        speechSynthesis.cancel();
-
-        const utter = new SpeechSynthesisUtterance(String(text));
-        utter.lang = 'ar-SA';
-        utter.rate = 0.85;
-        utter.pitch = 1;
-        utter.volume = 1;
-
-        const voices = loadVoices();
-        // Əvvəl ərəbcə səs axtar, yoxdursa hər hansı səs
-        let chosen = voices.find(v => v.lang && (v.lang.startsWith('ar') || v.lang.includes('Arab')));
-        if (!chosen && voices.length) {
-            // Bəzi cihazlarda ərəbcə səs yoxdur, amma default ilə də oxuya bilər
-            chosen = voices.find(v => v.default) || voices[0];
-        }
-        if (chosen) {
-            utter.voice = chosen;
-            // Əgər ərəbcə deyilsə belə lang-i saxla
-            if (chosen.lang && chosen.lang.startsWith('ar')) {
-                utter.lang = chosen.lang;
-            }
-        }
-
-        utter.onerror = (e) => {
-            console.warn('TTS error:', e);
-            // Xəta olduqda istifadəçiyə məlumat ver (bir dəfə)
-            if (e && e.error === 'not-allowed') {
-                alert('Səs icazəsi verilməyib. Brauzer ayarlarından səsə icazə verin.');
-            }
-        };
-
-        speechSynthesis.speak(utter);
-    } catch (err) {
-        console.warn('TTS failed:', err);
-        alert('Tələffüz işə düşmədi. Brauzerinizi yeniləyin və ya Chrome istifadə edin.');
-    }
-}
-
-// ==================== AXTARIŞ ====================
-function searchVerbs(query) {
-    if (!query || !query.trim()) return verbsData.slice();
-    const q = query.trim().toLowerCase();
-    const qAr = normalizeArabic(query);
-    return verbsData.filter(v => {
-        const meaning = (v.meaning || '').toLowerCase();
-        const arabic = normalizeArabic(v.arabic || '');
-        const past = normalizeArabic(v.forms?.past?.arabic || '');
-        const present = normalizeArabic(v.forms?.present?.arabic || '');
-        return meaning.includes(q) || arabic.includes(qAr) || past.includes(qAr) || present.includes(qAr) || String(v.id).includes(q);
-    });
-}
-
-function searchDialogues(query) {
-    if (!query || !query.trim()) return dialoguesData.slice();
-    const q = query.trim().toLowerCase();
-    const qAr = normalizeArabic(query);
-    return dialoguesData.filter(d => {
-        const title = (d.title || '').toLowerCase();
-        const text = (d.dialogue || []).map(x => (x.arabic + ' ' + x.translation).toLowerCase()).join(' ');
-        return title.includes(q) || text.includes(q) || normalizeArabic(text).includes(qAr) || String(d.id).includes(q);
-    });
 }
 
 // ==================== RENDER FUNCTIONS ====================
@@ -449,19 +426,10 @@ function showMainMenu() {
 }
 
 // Feillər bölməsi
-let verbListFilter = 'all'; // all | unlearned | learned | favorites
-let verbSearchQuery = '';
-
 function showVerbsSection(index) {
     const content = document.getElementById('content-area');
     content.style.display = 'block';
     document.getElementById('main-menu').style.display = 'none';
-
-    // Əgər index verilməyibsə və axtarış/list rejimi aktivdirsə list göstər
-    if (index === undefined && (verbSearchQuery || verbListFilter !== 'all')) {
-        showVerbsList();
-        return;
-    }
 
     if (index === undefined) {
         const nextUnlearned = getNextUnlearnedVerb();
@@ -471,7 +439,6 @@ function showVerbsSection(index) {
                     <p style="font-size: 2rem; margin-bottom: 16px;">🎉</p>
                     <h2 class="text-xl font-bold mb-2">Bütün feilləri öyrəndiniz!</h2>
                     <p class="text-white-75 mb-4">Yeni feil əlavə edildikdə burada görünəcək.</p>
-                    <button onclick="showVerbsList()" class="glass-button px-6 py-3 mb-3">Siyahıya bax</button>
                     <button onclick="resetAllProgress()" class="glass-button px-6 py-3">Proqressi sıfırla</button>
                 </div>
             `;
@@ -491,7 +458,7 @@ function showVerbsSection(index) {
         formsHtml += `
             <div class="flex-between border-b py-2 clickable" onclick="openFormExamples(${verb.id}, '${key}')">
                 <span class="text-white-75">${label}</span>
-                <span class="arabic-text font-bold">${verb.forms[key].arabic}</span>
+                <span class="arabic-text font-bold">${displayArabic(verb.forms[key].arabic)}</span>
                 <span class="text-white-75" style="font-size: 0.875rem;">${verb.forms[key].translation}</span>
             </div>
         `;
@@ -502,18 +469,17 @@ function showVerbsSection(index) {
             <div class="flex-between mb-4">
                 <div>
                     <h2 class="text-2xl font-bold">Feil öyrən</h2>
-                    <p class="text-white-75" style="font-size: 0.875rem;">${verb.arabic} - ${verb.meaning}</p>
+                    <p class="text-white-75" style="font-size: 0.875rem;">${displayArabic(verb.arabic)} - ${verb.meaning}</p>
                 </div>
                 <div style="display:flex; align-items:center; gap:6px;">
-                    <button onclick="speakArabic('${verb.arabic.replace(/'/g, "\\'")}')" class="tts-btn" title="Tələffüz et">🔊</button>
+                    <button onclick="showVerbSearch()" class="fav-star-btn" title="Axtar">🔍</button>
                     <button onclick="toggleFavoriteAndRerenderVerb(${verb.id})" class="fav-star-btn" title="Favoritə əlavə et">${isFavorite ? '⭐' : '☆'}</button>
-                    <button onclick="showVerbsList()" class="mini-btn" title="Siyahı">☰</button>
                     <button onclick="showMainMenu()" class="close-btn">✕</button>
                 </div>
             </div>
             <div class="progress-text">${currentVerbIndex + 1} / ${verbsData.length}</div>
             <div class="text-center mb-4">
-                <p class="arabic-text text-4xl font-bold mb-2">${verb.arabic}</p>
+                <p class="arabic-text text-4xl font-bold mb-2">${displayArabic(verb.arabic)}</p>
                 <p class="text-white-75 text-lg">${verb.meaning}</p>
             </div>
             <div class="mb-4">
@@ -531,63 +497,57 @@ function showVerbsSection(index) {
     `;
 }
 
-function showVerbsList() {
+// ==================== AXTARIŞ (FEİLLƏR) ====================
+function showVerbSearch() {
     const content = document.getElementById('content-area');
     content.style.display = 'block';
     document.getElementById('main-menu').style.display = 'none';
 
-    let list = searchVerbs(verbSearchQuery);
-    if (verbListFilter === 'unlearned') list = list.filter(v => !learnedVerbs.includes(v.id));
-    else if (verbListFilter === 'learned') list = list.filter(v => learnedVerbs.includes(v.id));
-    else if (verbListFilter === 'favorites') list = list.filter(v => favoriteVerbs.includes(v.id));
+    content.innerHTML = `
+        <div class="glass-card fade-in">
+            <div class="flex-between mb-4">
+                <h2 class="text-xl font-bold">🔍 Söz axtar</h2>
+                <button onclick="showVerbsSection(${currentVerbIndex})" class="close-btn">✕</button>
+            </div>
+            <input type="text" id="verb-search-input" class="input-field mb-4" placeholder="Ərəbcə və ya azərbaycanca yazın..." autocomplete="off" oninput="filterVerbSearch(this.value)">
+            <div id="verb-search-results"></div>
+        </div>
+    `;
+    document.getElementById('verb-search-input').focus();
+    filterVerbSearch('');
+}
 
-    const itemsHtml = list.slice(0, 80).map(v => {
-        const learned = learnedVerbs.includes(v.id);
-        const fav = favoriteVerbs.includes(v.id);
-        const statusClass = fav ? 'favorite' : (learned ? 'learned' : 'unlearned');
+function filterVerbSearch(query) {
+    const resultsDiv = document.getElementById('verb-search-results');
+    if (!resultsDiv) return;
+    const q = query.trim().toLowerCase();
+    const qNormalized = normalizeArabic(query.trim());
+
+    let matches;
+    if (q === '') {
+        matches = verbsData.slice(0, 30);
+    } else {
+        matches = verbsData.filter(v =>
+            v.meaning.toLowerCase().includes(q) ||
+            (qNormalized && normalizeArabic(v.arabic).includes(qNormalized))
+        ).slice(0, 60);
+    }
+
+    if (matches.length === 0) {
+        resultsDiv.innerHTML = `<p class="text-white-75 text-center" style="padding: 20px 0;">Nəticə tapılmadı</p>`;
+        return;
+    }
+
+    resultsDiv.innerHTML = matches.map(v => {
         const idx = verbsData.findIndex(x => x.id === v.id);
+        const learned = learnedVerbs.includes(v.id) ? '✓ ' : '';
         return `
-            <div class="verb-list-item" onclick="showVerbsSection(${idx})">
-                <span class="status-dot ${statusClass}"></span>
-                <span class="meaning">${v.meaning}</span>
-                <span class="arabic-text">${v.arabic}</span>
+            <div class="flex-between border-b py-2 clickable" onclick="showVerbsSection(${idx})">
+                <span class="arabic-text">${displayArabic(v.arabic)}</span>
+                <span class="text-white-75" style="font-size: 0.875rem;">${learned}${v.meaning}</span>
             </div>
         `;
     }).join('');
-
-    const moreNote = list.length > 80 ? `<p class="text-white-50 text-center mt-2" style="font-size:0.8rem;">İlk 80 nəticə göstərilir (${list.length} tapıldı). Axtarışı daraldın.</p>` : '';
-
-    content.innerHTML = `
-        <div class="glass-card fade-in">
-            <div class="flex-between mb-3">
-                <h2 class="text-xl font-bold">Feillər siyahısı</h2>
-                <button onclick="showMainMenu()" class="close-btn">✕</button>
-            </div>
-            <input type="search" class="search-box" id="verb-search-input" placeholder="Axtar: məna, ərəbcə və ya ID..." value="${verbSearchQuery.replace(/"/g, '&quot;')}" oninput="onVerbSearch(this.value)">
-            <div class="filter-row">
-                <span class="filter-chip ${verbListFilter==='all'?'active':''}" onclick="setVerbFilter('all')">Hamısı</span>
-                <span class="filter-chip ${verbListFilter==='unlearned'?'active':''}" onclick="setVerbFilter('unlearned')">Öyrənilməmiş</span>
-                <span class="filter-chip ${verbListFilter==='learned'?'active':''}" onclick="setVerbFilter('learned')">Öyrənilmiş</span>
-                <span class="filter-chip ${verbListFilter==='favorites'?'active':''}" onclick="setVerbFilter('favorites')">⭐ Favorit</span>
-            </div>
-            <p class="text-white-50 mb-2" style="font-size:0.8rem;">${list.length} feil</p>
-            <div style="max-height: 55vh; overflow-y: auto;">${itemsHtml || '<p class="text-center text-white-50">Nəticə yoxdur</p>'}</div>
-            ${moreNote}
-            <button onclick="showVerbsSection()" class="glass-button mt-3 py-3">Öyrənməyə davam et</button>
-        </div>
-    `;
-    const inp = document.getElementById('verb-search-input');
-    if (inp) { inp.focus(); const len = inp.value.length; inp.setSelectionRange(len, len); }
-}
-
-function onVerbSearch(val) {
-    verbSearchQuery = val;
-    showVerbsList();
-}
-
-function setVerbFilter(f) {
-    verbListFilter = f;
-    showVerbsList();
 }
 
 function navigateVerb(delta) {
@@ -609,16 +569,10 @@ function openFormExamples(verbId, formKey) {
 
     let examplesHtml = '';
     formData.examples.forEach(ex => {
-        const safeAr = (ex.arabic || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
         examplesHtml += `
             <div class="rounded-xl mb-2" style="background: rgba(255,255,255,0.05); padding: 12px;">
-                <div style="display:flex; align-items:flex-start; gap:8px;">
-                    <button onclick="speakArabic('${safeAr}')" class="tts-btn" title="Tələffüz">🔊</button>
-                    <div style="flex:1;">
-                        <p class="arabic-text mb-1">${ex.arabic}</p>
-                        <p class="text-white-75" style="font-size: 0.875rem; direction: ltr; text-align: left;">${ex.translation}</p>
-                    </div>
-                </div>
+                <p class="arabic-text mb-1">${displayArabic(ex.arabic)}</p>
+                <p class="text-white-75" style="font-size: 0.875rem; direction: ltr; text-align: left;">${ex.translation}</p>
             </div>
         `;
     });
@@ -630,7 +584,7 @@ function openFormExamples(verbId, formKey) {
                 <button onclick="showVerbsSection(${currentVerbIndex})" class="close-btn">✕</button>
             </div>
             <div class="text-center mb-4">
-                <p class="arabic-text text-3xl font-bold">${formData.arabic}</p>
+                <p class="arabic-text text-3xl font-bold">${displayArabic(formData.arabic)}</p>
                 <p class="text-white-75">${verb.meaning} (${formData.translation})</p>
             </div>
             ${examplesHtml}
@@ -654,18 +608,10 @@ function markVerbLearned(id) {
 }
 
 // Dialoqlar bölməsi
-let dialogueSearchQuery = '';
-let dialogueListFilter = 'all';
-
 function showDialoguesSection(index) {
     const content = document.getElementById('content-area');
     content.style.display = 'block';
     document.getElementById('main-menu').style.display = 'none';
-
-    if (index === undefined && (dialogueSearchQuery || dialogueListFilter !== 'all')) {
-        showDialoguesList();
-        return;
-    }
 
     if (index === undefined) {
         const nextUnlearned = getNextUnlearnedDialogue();
@@ -675,7 +621,6 @@ function showDialoguesSection(index) {
                     <p style="font-size: 2rem; margin-bottom: 16px;">🎉</p>
                     <h2 class="text-xl font-bold mb-2">Bütün dialoqları öyrəndiniz!</h2>
                     <p class="text-white-75 mb-4">Yeni dialoq əlavə edildikdə burada görünəcək.</p>
-                    <button onclick="showDialoguesList()" class="glass-button px-6 py-3 mb-3">Siyahıya bax</button>
                     <button onclick="resetAllProgress()" class="glass-button px-6 py-3">Proqressi sıfırla</button>
                 </div>
             `;
@@ -690,16 +635,10 @@ function showDialoguesSection(index) {
 
     let dialogueHtml = '';
     dialogue.dialogue.forEach((line) => {
-        const safeAr = (line.arabic || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
         dialogueHtml += `
             <div class="rounded-xl mb-2" style="background: rgba(255,255,255,0.05); padding: 12px;">
-                <div style="display:flex; align-items:flex-start; gap:8px;">
-                    <button onclick="speakArabic('${safeAr}')" class="tts-btn" title="Tələffüz">🔊</button>
-                    <div style="flex:1;">
-                        <p class="arabic-text mb-1">${line.arabic}</p>
-                        <p class="dialogue-translation">${line.translation}</p>
-                    </div>
-                </div>
+                <p class="arabic-text mb-1">${displayArabic(line.arabic)}</p>
+                <p class="dialogue-translation">${line.translation}</p>
             </div>
         `;
     });
@@ -708,10 +647,7 @@ function showDialoguesSection(index) {
         <div class="glass-card fade-in">
             <div class="flex-between mb-4">
                 <h2 class="text-2xl font-bold">${dialogue.title}</h2>
-                <div style="display:flex; align-items:center; gap:6px;">
-                    <button onclick="showDialoguesList()" class="mini-btn" title="Siyahı">☰</button>
-                    <button onclick="showMainMenu()" class="close-btn">✕</button>
-                </div>
+                <button onclick="showMainMenu()" class="close-btn">✕</button>
             </div>
             <div class="progress-text">${currentDialogueIndex + 1} / ${dialoguesData.length}</div>
             <div class="text-right mb-2">
@@ -729,58 +665,6 @@ function showDialoguesSection(index) {
             </div>
         </div>
     `;
-}
-
-function showDialoguesList() {
-    const content = document.getElementById('content-area');
-    content.style.display = 'block';
-    document.getElementById('main-menu').style.display = 'none';
-
-    let list = searchDialogues(dialogueSearchQuery);
-    if (dialogueListFilter === 'unlearned') list = list.filter(d => !learnedDialogues.includes(d.id));
-    else if (dialogueListFilter === 'learned') list = list.filter(d => learnedDialogues.includes(d.id));
-
-    const itemsHtml = list.slice(0, 80).map(d => {
-        const learned = learnedDialogues.includes(d.id);
-        const idx = dialoguesData.findIndex(x => x.id === d.id);
-        return `
-            <div class="verb-list-item" onclick="showDialoguesSection(${idx})">
-                <span class="status-dot ${learned ? 'learned' : 'unlearned'}"></span>
-                <span class="meaning" style="min-width:auto;flex:1;">${d.title}</span>
-                <span class="text-white-50" style="font-size:0.75rem;">#${d.id}</span>
-            </div>
-        `;
-    }).join('');
-
-    content.innerHTML = `
-        <div class="glass-card fade-in">
-            <div class="flex-between mb-3">
-                <h2 class="text-xl font-bold">Dialoqlar siyahısı</h2>
-                <button onclick="showMainMenu()" class="close-btn">✕</button>
-            </div>
-            <input type="search" class="search-box" id="dialogue-search-input" placeholder="Axtar: başlıq və ya söz..." value="${dialogueSearchQuery.replace(/"/g, '&quot;')}" oninput="onDialogueSearch(this.value)">
-            <div class="filter-row">
-                <span class="filter-chip ${dialogueListFilter==='all'?'active':''}" onclick="setDialogueFilter('all')">Hamısı</span>
-                <span class="filter-chip ${dialogueListFilter==='unlearned'?'active':''}" onclick="setDialogueFilter('unlearned')">Öyrənilməmiş</span>
-                <span class="filter-chip ${dialogueListFilter==='learned'?'active':''}" onclick="setDialogueFilter('learned')">Öyrənilmiş</span>
-            </div>
-            <p class="text-white-50 mb-2" style="font-size:0.8rem;">${list.length} dialoq</p>
-            <div style="max-height: 55vh; overflow-y: auto;">${itemsHtml || '<p class="text-center text-white-50">Nəticə yoxdur</p>'}</div>
-            <button onclick="showDialoguesSection()" class="glass-button mt-3 py-3">Öyrənməyə davam et</button>
-        </div>
-    `;
-    const inp = document.getElementById('dialogue-search-input');
-    if (inp) { inp.focus(); const len = inp.value.length; inp.setSelectionRange(len, len); }
-}
-
-function onDialogueSearch(val) {
-    dialogueSearchQuery = val;
-    showDialoguesList();
-}
-
-function setDialogueFilter(f) {
-    dialogueListFilter = f;
-    showDialoguesList();
 }
 
 function navigateDialogue(delta) {
@@ -816,6 +700,9 @@ function markDialogueLearned(id) {
 }
 
 // Test rejimi seçimi
+let testDeck = questionsData;
+let testMode = 'normal';
+
 function showTestModeSelect() {
     const content = document.getElementById('content-area');
     content.style.display = 'block';
@@ -826,11 +713,18 @@ function showTestModeSelect() {
                 <h2 class="text-2xl font-bold">📝 Testlər</h2>
                 <button onclick="showMainMenu()" class="close-btn">✕</button>
             </div>
-            <div class="mode-select-card" onclick="showTestsSection()">
+            <div class="mode-select-card" onclick="startNormalTest()">
                 <div class="mode-select-icon">📝</div>
                 <div>
                     <div class="mode-select-title">Adi test</div>
                     <div class="mode-select-desc">Sual-sual, öz sürətinizlə</div>
+                </div>
+            </div>
+            <div class="mode-select-card" onclick="startDifficultQuestionsReview()">
+                <div class="mode-select-icon">❌</div>
+                <div>
+                    <div class="mode-select-title">Çətin suallar</div>
+                    <div class="mode-select-desc">${difficultQuestions.length} sual</div>
                 </div>
             </div>
             <div class="mode-select-card" onclick="startSpeedRound()">
@@ -851,6 +745,32 @@ function showTestModeSelect() {
     `;
 }
 
+function startNormalTest() {
+    testMode = 'normal';
+    testDeck = questionsData;
+    showTestsSection();
+}
+
+function startDifficultQuestionsReview() {
+    if (difficultQuestions.length === 0) {
+        const content = document.getElementById('content-area');
+        content.style.display = 'block';
+        document.getElementById('main-menu').style.display = 'none';
+        content.innerHTML = `
+            <div class="glass-card text-center fade-in">
+                <p style="font-size: 2rem; margin-bottom: 12px;">🎉</p>
+                <h2 class="text-xl font-bold mb-2">Çətin sualınız yoxdur</h2>
+                <p class="text-white-75 mb-4">Səhv cavabladığınız suallar buraya avtomatik toplanır.</p>
+                <button onclick="showTestModeSelect()" class="glass-button py-3">Geri</button>
+            </div>
+        `;
+        return;
+    }
+    testMode = 'difficult';
+    testDeck = questionsData.filter(q => difficultQuestions.includes(q.id));
+    showTestsSection(0);
+}
+
 function highlightSelectedOption(radio) {
     const label = radio.closest('.option-label');
     const group = label.parentElement;
@@ -865,28 +785,31 @@ function showTestsSection(index) {
     document.getElementById('main-menu').style.display = 'none';
 
     if (index === undefined) {
-        const nextUnanswered = getNextUnansweredQuestion();
+        const nextUnanswered = testDeck.find(q => !answeredQuestions.includes(q.id));
         if (!nextUnanswered) {
+            const isNormal = testMode === 'normal';
             content.innerHTML = `
                 <div class="glass-card text-center">
                     <p style="font-size: 2rem; margin-bottom: 16px;">🏆</p>
-                    <h2 class="text-xl font-bold mb-2">Test tamamlandı!</h2>
+                    <h2 class="text-xl font-bold mb-2">${isNormal ? 'Test tamamlandı!' : 'Bütün suallar öyrənildi!'}</h2>
                     <p class="text-white-75 mb-4">Bütün suallara düzgün cavab verdiniz.</p>
-                    <button onclick="resetAllProgress()" class="glass-button px-6 py-3">Proqressi sıfırla</button>
+                    ${isNormal
+                        ? '<button onclick="resetAllProgress()" class="glass-button px-6 py-3">Proqressi sıfırla</button>'
+                        : '<button onclick="showTestModeSelect()" class="glass-button px-6 py-3">Geri</button>'}
                 </div>
             `;
             return;
         }
-        index = questionsData.findIndex(q => q.id === nextUnanswered.id);
+        index = testDeck.findIndex(q => q.id === nextUnanswered.id);
     }
-    index = clampIndex(index, questionsData.length);
+    index = clampIndex(index, testDeck.length);
     currentQuestionIndex = index;
-    const question = questionsData[currentQuestionIndex];
+    const question = testDeck[currentQuestionIndex];
 
     const navRowHtml = `
         <div class="nav-row">
             <button onclick="navigateQuestion(-1)" class="glass-button" ${currentQuestionIndex === 0 ? 'disabled' : ''}>◀ Əvvəlki</button>
-            <button onclick="navigateQuestion(1)" class="glass-button" ${currentQuestionIndex === questionsData.length - 1 ? 'disabled' : ''}>Növbəti ▶</button>
+            <button onclick="navigateQuestion(1)" class="glass-button" ${currentQuestionIndex === testDeck.length - 1 ? 'disabled' : ''}>Növbəti ▶</button>
         </div>
     `;
 
@@ -896,7 +819,7 @@ function showTestsSection(index) {
             optionsHtml += `
                 <label class="option-label">
                     <input type="radio" name="q${question.id}" value="${idx}" onchange="highlightSelectedOption(this)">
-                    <span class="arabic-text text-lg">${opt}</span>
+                    <span class="arabic-text text-lg">${displayArabic(opt)}</span>
                 </label>
             `;
         });
@@ -906,7 +829,7 @@ function showTestsSection(index) {
                     <h2 class="text-xl font-bold">Test sualı</h2>
                     <button onclick="showTestModeSelect()" class="close-btn">✕</button>
                 </div>
-                <div class="progress-text">${currentQuestionIndex + 1} / ${questionsData.length}</div>
+                <div class="progress-text">${currentQuestionIndex + 1} / ${testDeck.length}</div>
                 <p class="text-lg mb-4">${question.question}</p>
                 <div class="mb-4">${optionsHtml}</div>
                 <button onclick="checkChoiceAnswer(${question.id})" class="glass-button py-3 font-bold">Cavabı yoxla</button>
@@ -921,7 +844,7 @@ function showTestsSection(index) {
                     <h2 class="text-xl font-bold">Boşluğu doldur</h2>
                     <button onclick="showTestModeSelect()" class="close-btn">✕</button>
                 </div>
-                <div class="progress-text">${currentQuestionIndex + 1} / ${questionsData.length}</div>
+                <div class="progress-text">${currentQuestionIndex + 1} / ${testDeck.length}</div>
                 <p class="text-lg mb-4">${question.question}</p>
                 <input type="text" id="input-${question.id}" class="input-field mb-4" placeholder="Cavabınızı yazın" autocomplete="off">
                 <button onclick="checkInputAnswer(${question.id})" class="glass-button py-3 font-bold">Cavabı yoxla</button>
@@ -950,6 +873,7 @@ function checkChoiceAnswer(qid) {
         selectedLabel.classList.add('correct-choice');
         feedback.innerHTML = '<span class="success">✅ Düzgün!</span>';
         recordTestAttempt(true);
+        unmarkQuestionDifficult(qid);
         if (!answeredQuestions.includes(qid)) {
             answeredQuestions.push(qid);
             saveAnsweredQuestions();
@@ -960,11 +884,12 @@ function checkChoiceAnswer(qid) {
     } else {
         selectedLabel.classList.add('wrong-choice');
         recordTestAttempt(false);
+        markQuestionDifficult(qid);
         feedback.innerHTML = `
             <span class="error">❌ Səhvdir, yenidən cəhd edin.</span>
             <div class="correct-answer-box">
                 <span class="text-white-75" style="font-size: 0.85rem;">Düzgün cavab:</span>
-                <p class="arabic-text">${question.options[question.correct]}</p>
+                <p class="arabic-text">${displayArabic(question.options[question.correct])}</p>
             </div>
         `;
     }
@@ -983,6 +908,7 @@ function checkInputAnswer(qid) {
     if (normalizedUser === normalizedCorrect) {
         feedback.innerHTML = '<span class="success">✅ Düzgün!</span>';
         recordTestAttempt(true);
+        unmarkQuestionDifficult(qid);
         if (!answeredQuestions.includes(qid)) {
             answeredQuestions.push(qid);
             saveAnsweredQuestions();
@@ -992,11 +918,12 @@ function checkInputAnswer(qid) {
         setTimeout(() => showTestsSection(currentQuestionIndex + 1), 1200);
     } else {
         recordTestAttempt(false);
+        markQuestionDifficult(qid);
         feedback.innerHTML = `
             <span class="error">❌ Səhvdir, yenidən cəhd edin.</span>
             <div class="correct-answer-box">
                 <span class="text-white-75" style="font-size: 0.85rem;">Düzgün cavab:</span>
-                <p class="arabic-text">${question.correctAnswer}</p>
+                <p class="arabic-text">${displayArabic(question.correctAnswer)}</p>
             </div>
         `;
     }
@@ -1045,7 +972,7 @@ function renderSpeedRoundQuestion() {
     speedRound.timeLeft = 10;
     let optionsHtml = '';
     q.options.forEach((opt, idx) => {
-        optionsHtml += `<button class="glass-button mb-2" style="text-align:left;" onclick="answerSpeedRound(${idx})"><span class="arabic-text text-lg">${opt}</span></button>`;
+        optionsHtml += `<button class="glass-button mb-2" style="text-align:left;" onclick="answerSpeedRound(${idx})"><span class="arabic-text text-lg">${displayArabic(opt)}</span></button>`;
     });
 
     content.innerHTML = `
@@ -1078,7 +1005,7 @@ function answerSpeedRound(chosenIdx) {
     clearInterval(speedRound.timerId);
     const q = speedRound.questions[speedRound.index];
     const isCorrect = chosenIdx === q.correct;
-    if (isCorrect) speedRound.score += 1;
+    if (isCorrect) { speedRound.score += 1; unmarkQuestionDifficult(q.id); } else { markQuestionDifficult(q.id); }
     recordTestAttempt(isCorrect);
 
     const optionsDiv = document.getElementById('speed-options');
@@ -1141,7 +1068,7 @@ function renderMatchingGame() {
         const isMatched = matchGame.matched.includes(id);
         const isSelected = matchGame.selectedLeft === id;
         return `<div class="match-tile ${isMatched ? 'matched' : ''} ${isSelected ? 'selected' : ''}" onclick="selectMatchTile('left', ${id})">
-            <span class="arabic-text">${verb.arabic}</span>
+            <span class="arabic-text">${displayArabic(verb.arabic)}</span>
         </div>`;
     }).join('');
 
@@ -1204,12 +1131,28 @@ function showFlashcardModeSelect() {
 
     const unlearnedCount = verbsData.filter(v => !learnedVerbs.includes(v.id)).length;
     const favCount = favoriteVerbs.length;
+    const difficultCount = difficultVerbs.length;
+    const dueSrsCount = getDueSrsVerbs().length;
 
     content.innerHTML = `
         <div class="glass-card fade-in">
             <div class="flex-between mb-4">
                 <h2 class="text-2xl font-bold">🃏 Flash kartlar</h2>
                 <button onclick="showMainMenu()" class="close-btn">✕</button>
+            </div>
+            <div class="mode-select-card" onclick="startFlashcards('srs')">
+                <div class="mode-select-icon">🧠</div>
+                <div>
+                    <div class="mode-select-title">Ağıllı təkrar (SRS)</div>
+                    <div class="mode-select-desc">${dueSrsCount} söz növbədə</div>
+                </div>
+            </div>
+            <div class="mode-select-card" onclick="startFlashcards('difficult')">
+                <div class="mode-select-icon">❌</div>
+                <div>
+                    <div class="mode-select-title">Çətin sözlər</div>
+                    <div class="mode-select-desc">${difficultCount} söz</div>
+                </div>
             </div>
             <div class="mode-select-card" onclick="startFlashcards('all')">
                 <div class="mode-select-icon">📚</div>
@@ -1236,26 +1179,64 @@ function showFlashcardModeSelect() {
     `;
 }
 
+function getDueSrsVerbs() {
+    const today = todayStr();
+    return verbsData.filter(v => {
+        const rec = srsData[v.id];
+        return !rec || rec.nextReview <= today;
+    }).sort((a, b) => {
+        const da = srsData[a.id] ? srsData[a.id].nextReview : today;
+        const db = srsData[b.id] ? srsData[b.id].nextReview : today;
+        return da.localeCompare(db);
+    });
+}
+
+function updateSrsOnAnswer(id, knewIt) {
+    const schedule = [1, 3, 7, 16, 35, 90, 180];
+    const rec = srsData[id] || { interval: 0, reps: 0 };
+    if (knewIt) {
+        rec.reps = (rec.reps || 0) + 1;
+        rec.interval = schedule[Math.min(rec.reps - 1, schedule.length - 1)];
+    } else {
+        rec.reps = 0;
+        rec.interval = 1;
+    }
+    const next = new Date();
+    next.setDate(next.getDate() + rec.interval);
+    rec.nextReview = next.toISOString().slice(0, 10);
+    srsData[id] = rec;
+    localStorage.setItem('srsData', JSON.stringify(srsData));
+}
+
 function startFlashcards(filterType) {
     let pool;
     if (filterType === 'unlearned') pool = verbsData.filter(v => !learnedVerbs.includes(v.id));
     else if (filterType === 'favorites') pool = verbsData.filter(v => favoriteVerbs.includes(v.id));
+    else if (filterType === 'difficult') pool = verbsData.filter(v => difficultVerbs.includes(v.id));
+    else if (filterType === 'srs') pool = getDueSrsVerbs();
     else pool = verbsData.slice();
 
     if (pool.length === 0) {
+        const emptyMessages = {
+            favorites: 'Hələ favorit söz əlavə etməmisiniz.',
+            difficult: 'Çətin söz siyahınız boşdur — əla nəticədir! 🎉',
+            srs: 'Bugün üçün təkrarlanacaq söz yoxdur, sabah yenidən baxın! 🎉',
+            unlearned: 'Bütün sözləri artıq öyrənmisiniz!'
+        };
         const content = document.getElementById('content-area');
         content.innerHTML = `
             <div class="glass-card text-center fade-in">
                 <p style="font-size: 2rem; margin-bottom: 12px;">🤷</p>
                 <h2 class="text-xl font-bold mb-2">Bu siyahı boşdur</h2>
-                <p class="text-white-75 mb-4">${filterType === 'favorites' ? 'Hələ favorit söz əlavə etməmisiniz.' : 'Bütün sözləri artıq öyrənmisiniz!'}</p>
+                <p class="text-white-75 mb-4">${emptyMessages[filterType] || 'Bu siyahı hazırda boşdur.'}</p>
                 <button onclick="showFlashcardModeSelect()" class="glass-button py-3">Geri</button>
             </div>
         `;
         return;
     }
 
-    flashcardSession = { deck: shuffleArray(pool), index: 0, knownCount: 0, unknownCount: 0 };
+    const deck = filterType === 'srs' ? pool : shuffleArray(pool);
+    flashcardSession = { deck, index: 0, knownCount: 0, unknownCount: 0, mode: filterType, requeueCount: {} };
     renderFlashcard();
 }
 
@@ -1294,13 +1275,12 @@ function renderFlashcard() {
                     <div class="flashcard-inner">
                         <div class="flashcard-face flashcard-front">
                             <button class="fav-star-btn" style="position:absolute; top:10px; right:14px;" onclick="event.stopPropagation(); toggleFavoriteAndRerenderFlashcard(${verb.id})">${isFavorite ? '⭐' : '☆'}</button>
-                            <button class="tts-btn" style="position:absolute; top:10px; left:14px;" onclick="event.stopPropagation(); speakArabic('${(verb.arabic || '').replace(/'/g, "\\'")}')" title="Tələffüz">🔊</button>
-                            <p class="arabic-text text-4xl font-bold">${verb.arabic}</p>
+                            <p class="arabic-text text-4xl font-bold">${displayArabic(verb.arabic)}</p>
                             <p class="flip-hint">Çevirmək üçün toxunun</p>
                         </div>
                         <div class="flashcard-face flashcard-back">
                             <p class="text-2xl font-bold mb-2">${verb.meaning}</p>
-                            <p class="text-white-75" style="font-size: 0.85rem;">${verb.forms.past.arabic} — ${verb.forms.past.translation}</p>
+                            <p class="text-white-75" style="font-size: 0.85rem;">${displayArabic(verb.forms.past.arabic)} — ${verb.forms.past.translation}</p>
                             <p class="flip-hint">Geri qayıtmaq üçün toxunun</p>
                         </div>
                     </div>
@@ -1321,8 +1301,28 @@ function toggleFlashcardFlip() {
 
 function answerFlashcard(knewIt) {
     if (!flashcardSession) return;
-    if (knewIt) flashcardSession.knownCount += 1;
-    else flashcardSession.unknownCount += 1;
+    const verb = flashcardSession.deck[flashcardSession.index];
+
+    if (knewIt) {
+        flashcardSession.knownCount += 1;
+        unmarkVerbDifficult(verb.id);
+    } else {
+        flashcardSession.unknownCount += 1;
+        markVerbDifficult(verb.id);
+    }
+
+    if (flashcardSession.mode === 'srs') {
+        updateSrsOnAnswer(verb.id, knewIt);
+        if (!knewIt) {
+            const reqCount = flashcardSession.requeueCount[verb.id] || 0;
+            if (reqCount < 2) {
+                flashcardSession.requeueCount[verb.id] = reqCount + 1;
+                const insertAt = Math.min(flashcardSession.deck.length, flashcardSession.index + 3);
+                flashcardSession.deck.splice(insertAt, 0, verb);
+            }
+        }
+    }
+
     flashcardSession.index += 1;
     renderFlashcard();
 }
@@ -1468,6 +1468,29 @@ function maybeShowDailyReminder() {
     }
 }
 
+function renderSettingsCardHtml() {
+    const percentLabel = Math.round(arabicFontScale * 100) + '%';
+    return `
+        <div class="notif-card">
+            <h3 class="font-semibold mb-2">⚙️ Ayarlar</h3>
+            <div class="notif-row">
+                <span class="text-white-75">Ərəb şrifti ölçüsü</span>
+                <span id="arabic-scale-label" class="text-white-75">${percentLabel}</span>
+            </div>
+            <input type="range" min="0.8" max="1.6" step="0.05" value="${arabicFontScale}" style="width:100%; margin-bottom: 6px;" oninput="onArabicFontSliderChange(this)">
+            <p class="arabic-text text-2xl text-center mb-3" style="direction: rtl;">أَجَابَ</p>
+            <div class="notif-row">
+                <span class="text-white-75">👁️ Hərəkəsiz oxu rejimi</span>
+                <label class="switch">
+                    <input type="checkbox" ${hideHarakat ? 'checked' : ''} onchange="toggleHideHarakatSetting(this)">
+                    <span class="slider-toggle"></span>
+                </label>
+            </div>
+            <p class="notif-status">Aktiv olanda hərəkələr (fətihə, kəsrə, zəmmə) gizlədilir — orta/yuxarı səviyyə üçün faydalıdır.</p>
+        </div>
+    `;
+}
+
 function renderNotificationCardHtml() {
     const { hasNotificationApi } = getNotificationSupportInfo();
     const permission = hasNotificationApi ? Notification.permission : 'unsupported';
@@ -1514,6 +1537,7 @@ document.getElementById('theme-toggle-btn').addEventListener('click', () => togg
 
 // Başlanğıcda: temanı tətbiq et, versiyanı göstər, seriyanı yenilə, nişanları yoxla, ana menyunu göstər
 initTheme();
+applyArabicFontScale();
 initVersionTag();
 updateStreakOnVisit();
 checkBadges();
