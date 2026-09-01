@@ -1,8 +1,12 @@
 // app.js
+const APP_VERSION = '1.0.0';
+
 // ==================== STATE ====================
 let learnedVerbs = JSON.parse(localStorage.getItem('learnedVerbs') || '[]');
 let learnedDialogues = JSON.parse(localStorage.getItem('learnedDialogues') || '[]');
 let answeredQuestions = JSON.parse(localStorage.getItem('answeredQuestions') || '[]');
+let favoriteVerbs = JSON.parse(localStorage.getItem('favoriteVerbs') || '[]');
+let notificationSettings = JSON.parse(localStorage.getItem('notificationSettings') || '{"enabled":false,"time":"19:00","lastNotifiedDate":null}');
 
 // Cari mövqe indeksləri (bölmə daxilində irəli/geri getmək üçün)
 let currentVerbIndex = 0;
@@ -119,20 +123,6 @@ function openDailyWord() {
     showVerbsSection(idx);
 }
 
-function continueLesson() {
-    if (getNextUnlearnedVerb()) { showVerbsSection(); return; }
-    if (getNextUnlearnedDialogue()) { showDialoguesSection(); return; }
-    if (getNextUnansweredQuestion()) { showTestsSection(); return; }
-    showStatsSection();
-}
-
-function getContinueLabel() {
-    if (getNextUnlearnedVerb()) return '▶ Davam et: Feil öyrən';
-    if (getNextUnlearnedDialogue()) return '▶ Davam et: Dialoq oxu';
-    if (getNextUnansweredQuestion()) return '▶ Davam et: Test həll et';
-    return '🎉 Hamısı tamamlandı! Statistikaya bax';
-}
-
 function renderHomeStats() {
     const container = document.getElementById('home-stats');
     if (!container) return;
@@ -160,7 +150,6 @@ function renderHomeStats() {
             <div class="arabic-text text-2xl">${dw.arabic}</div>
             <div class="text-white-75">${dw.meaning}</div>
         </div>
-        <button class="glass-button continue-btn" onclick="continueLesson()">${getContinueLabel()}</button>
     `;
 }
 
@@ -207,6 +196,8 @@ function showStatsSection() {
             <h3 class="font-semibold mb-2">Nişanlar</h3>
             <div class="badge-grid">${badgesHtml}</div>
 
+            ${renderNotificationCardHtml()}
+
             <button onclick="resetAllProgress()" class="glass-button mt-4" style="background: rgba(248,113,113,0.15); border-color: rgba(248,113,113,0.4);">Proqressi sıfırla</button>
         </div>
     `;
@@ -216,10 +207,48 @@ function showStatsSection() {
 function saveLearnedVerbs() { localStorage.setItem('learnedVerbs', JSON.stringify(learnedVerbs)); }
 function saveLearnedDialogues() { localStorage.setItem('learnedDialogues', JSON.stringify(learnedDialogues)); }
 function saveAnsweredQuestions() { localStorage.setItem('answeredQuestions', JSON.stringify(answeredQuestions)); }
+function saveFavoriteVerbs() { localStorage.setItem('favoriteVerbs', JSON.stringify(favoriteVerbs)); }
+function toggleFavorite(id) {
+    if (favoriteVerbs.includes(id)) {
+        favoriteVerbs = favoriteVerbs.filter(x => x !== id);
+    } else {
+        favoriteVerbs.push(id);
+    }
+    saveFavoriteVerbs();
+}
 
 function getNextUnlearnedVerb() { return verbsData.find(v => !learnedVerbs.includes(v.id)) || null; }
 function getNextUnlearnedDialogue() { return dialoguesData.find(d => !learnedDialogues.includes(d.id)) || null; }
 function getNextUnansweredQuestion() { return questionsData.find(q => !answeredQuestions.includes(q.id)) || null; }
+
+// ==================== TEMA (QARANLIQ / AÇIQ) ====================
+function applyTheme(theme) {
+    const btn = document.getElementById('theme-toggle-btn');
+    if (theme === 'light') {
+        document.body.classList.add('light-theme');
+        if (btn) btn.textContent = '🌙';
+    } else {
+        document.body.classList.remove('light-theme');
+        if (btn) btn.textContent = '☀️';
+    }
+}
+
+function initTheme() {
+    const saved = localStorage.getItem('theme') || 'dark';
+    applyTheme(saved);
+}
+
+function toggleTheme() {
+    const current = localStorage.getItem('theme') || 'dark';
+    const next = current === 'light' ? 'dark' : 'light';
+    localStorage.setItem('theme', next);
+    applyTheme(next);
+}
+
+function initVersionTag() {
+    const el = document.getElementById('version-tag');
+    if (el) el.textContent = 'v' + APP_VERSION;
+}
 
 function resetAllProgress() {
     localStorage.removeItem('learnedVerbs');
@@ -291,6 +320,7 @@ function showVerbsSection(index) {
     currentVerbIndex = index;
     const verb = verbsData[currentVerbIndex];
     const isLearned = learnedVerbs.includes(verb.id);
+    const isFavorite = favoriteVerbs.includes(verb.id);
 
     let formsHtml = '';
     const formLabels = { past: 'Keçmiş', present: 'İndiki', imperative: 'Əmr' };
@@ -311,7 +341,10 @@ function showVerbsSection(index) {
                     <h2 class="text-2xl font-bold">Feil öyrən</h2>
                     <p class="text-white-75" style="font-size: 0.875rem;">${verb.arabic} - ${verb.meaning}</p>
                 </div>
-                <button onclick="showMainMenu()" class="close-btn">✕</button>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <button onclick="toggleFavoriteAndRerenderVerb(${verb.id})" class="fav-star-btn" title="Favoritə əlavə et">${isFavorite ? '⭐' : '☆'}</button>
+                    <button onclick="showMainMenu()" class="close-btn">✕</button>
+                </div>
             </div>
             <div class="progress-text">${currentVerbIndex + 1} / ${verbsData.length}</div>
             <div class="text-center mb-4">
@@ -335,6 +368,11 @@ function showVerbsSection(index) {
 
 function navigateVerb(delta) {
     showVerbsSection(currentVerbIndex + delta);
+}
+
+function toggleFavoriteAndRerenderVerb(id) {
+    toggleFavorite(id);
+    showVerbsSection(currentVerbIndex);
 }
 
 function openFormExamples(verbId, formKey) {
@@ -856,13 +894,345 @@ function selectMatchTile(side, id) {
     }
 }
 
+// ==================== FLASH KARTLAR ====================
+let flashcardSession = null; // { deck, index, knownCount, unknownCount }
+
+function showFlashcardModeSelect() {
+    const content = document.getElementById('content-area');
+    content.style.display = 'block';
+    document.getElementById('main-menu').style.display = 'none';
+
+    const unlearnedCount = verbsData.filter(v => !learnedVerbs.includes(v.id)).length;
+    const favCount = favoriteVerbs.length;
+
+    content.innerHTML = `
+        <div class="glass-card fade-in">
+            <div class="flex-between mb-4">
+                <h2 class="text-2xl font-bold">🃏 Flash kartlar</h2>
+                <button onclick="showMainMenu()" class="close-btn">✕</button>
+            </div>
+            <div class="mode-select-card" onclick="startFlashcards('all')">
+                <div class="mode-select-icon">📚</div>
+                <div>
+                    <div class="mode-select-title">Bütün sözlər</div>
+                    <div class="mode-select-desc">${verbsData.length} söz</div>
+                </div>
+            </div>
+            <div class="mode-select-card" onclick="startFlashcards('unlearned')">
+                <div class="mode-select-icon">🆕</div>
+                <div>
+                    <div class="mode-select-title">Yalnız öyrənilməmiş</div>
+                    <div class="mode-select-desc">${unlearnedCount} söz</div>
+                </div>
+            </div>
+            <div class="mode-select-card" onclick="startFlashcards('favorites')">
+                <div class="mode-select-icon">⭐</div>
+                <div>
+                    <div class="mode-select-title">Yalnız Favoritlər</div>
+                    <div class="mode-select-desc">${favCount} söz</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function startFlashcards(filterType) {
+    let pool;
+    if (filterType === 'unlearned') pool = verbsData.filter(v => !learnedVerbs.includes(v.id));
+    else if (filterType === 'favorites') pool = verbsData.filter(v => favoriteVerbs.includes(v.id));
+    else pool = verbsData.slice();
+
+    if (pool.length === 0) {
+        const content = document.getElementById('content-area');
+        content.innerHTML = `
+            <div class="glass-card text-center fade-in">
+                <p style="font-size: 2rem; margin-bottom: 12px;">🤷</p>
+                <h2 class="text-xl font-bold mb-2">Bu siyahı boşdur</h2>
+                <p class="text-white-75 mb-4">${filterType === 'favorites' ? 'Hələ favorit söz əlavə etməmisiniz.' : 'Bütün sözləri artıq öyrənmisiniz!'}</p>
+                <button onclick="showFlashcardModeSelect()" class="glass-button py-3">Geri</button>
+            </div>
+        `;
+        return;
+    }
+
+    flashcardSession = { deck: shuffleArray(pool), index: 0, knownCount: 0, unknownCount: 0 };
+    renderFlashcard();
+}
+
+function renderFlashcard() {
+    const content = document.getElementById('content-area');
+    content.style.display = 'block';
+    document.getElementById('main-menu').style.display = 'none';
+
+    if (flashcardSession.index >= flashcardSession.deck.length) {
+        const { knownCount, unknownCount, deck } = flashcardSession;
+        content.innerHTML = `
+            <div class="glass-card text-center fade-in">
+                <p style="font-size: 2rem; margin-bottom: 12px;">🃏</p>
+                <h2 class="text-xl font-bold mb-2">Deste bitdi!</h2>
+                <p class="text-white-75 mb-4">🟢 Bilirdim: ${knownCount} &nbsp;•&nbsp; 🔴 Bilmirdim: ${unknownCount} &nbsp;•&nbsp; Cəmi: ${deck.length}</p>
+                <button onclick="showFlashcardModeSelect()" class="glass-button py-3 font-bold mb-3">Yeni deste</button>
+                <button onclick="showMainMenu()" class="glass-button py-3">Ana menyu</button>
+            </div>
+        `;
+        flashcardSession = null;
+        return;
+    }
+
+    const verb = flashcardSession.deck[flashcardSession.index];
+    const isFavorite = favoriteVerbs.includes(verb.id);
+
+    content.innerHTML = `
+        <div class="glass-card fade-in">
+            <div class="flex-between mb-2">
+                <h2 class="text-xl font-bold">🃏 Flash kart</h2>
+                <button onclick="showFlashcardModeSelect()" class="close-btn">✕</button>
+            </div>
+            <div class="progress-text">${flashcardSession.index + 1} / ${flashcardSession.deck.length}</div>
+            <div class="flashcard-scene">
+                <div id="flashcard-el" class="flashcard" onclick="toggleFlashcardFlip()">
+                    <div class="flashcard-inner">
+                        <div class="flashcard-face flashcard-front">
+                            <button class="fav-star-btn" style="position:absolute; top:10px; right:14px;" onclick="event.stopPropagation(); toggleFavoriteAndRerenderFlashcard(${verb.id})">${isFavorite ? '⭐' : '☆'}</button>
+                            <p class="arabic-text text-4xl font-bold">${verb.arabic}</p>
+                            <p class="flip-hint">Çevirmək üçün toxunun</p>
+                        </div>
+                        <div class="flashcard-face flashcard-back">
+                            <p class="text-2xl font-bold mb-2">${verb.meaning}</p>
+                            <p class="text-white-75" style="font-size: 0.85rem;">${verb.forms.past.arabic} — ${verb.forms.past.translation}</p>
+                            <p class="flip-hint">Geri qayıtmaq üçün toxunun</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="know-row">
+                <button class="glass-button btn-dontknow" onclick="answerFlashcard(false)">🔴 Bilmirdim</button>
+                <button class="glass-button btn-know" onclick="answerFlashcard(true)">🟢 Bilirdim</button>
+            </div>
+        </div>
+    `;
+}
+
+function toggleFlashcardFlip() {
+    const el = document.getElementById('flashcard-el');
+    if (el) el.classList.toggle('flipped');
+}
+
+function answerFlashcard(knewIt) {
+    if (!flashcardSession) return;
+    if (knewIt) flashcardSession.knownCount += 1;
+    else flashcardSession.unknownCount += 1;
+    flashcardSession.index += 1;
+    renderFlashcard();
+}
+
+function toggleFavoriteAndRerenderFlashcard(id) {
+    toggleFavorite(id);
+    renderFlashcard();
+}
+
+// ==================== GÜNLÜK BİLDİRİŞ XATIRLATMASI ====================
+const REMINDER_MESSAGES = [
+    'Bugünkü gündəlik sözünü öyrənməyi unutma! 📖',
+    '5 dəqiqəlik məşq et, seriyanı davam etdir! 🔥',
+    'Gündəlik sözünə baxmağın vaxtıdır! 🕌',
+    'Bir feil, bir dialoq — bu gün üçün kifayətdir! 💪',
+    'Seriyanı qırma, indi bir sual həll et! 📝'
+];
+
+function saveNotificationSettings() {
+    localStorage.setItem('notificationSettings', JSON.stringify(notificationSettings));
+}
+
+function getNotificationSupportInfo() {
+    const hasNotificationApi = typeof Notification !== 'undefined';
+    const hasServiceWorker = typeof navigator !== 'undefined' && 'serviceWorker' in navigator;
+    return { hasNotificationApi, hasServiceWorker };
+}
+
+async function showLocalNotification(message) {
+    const { hasNotificationApi, hasServiceWorker } = getNotificationSupportInfo();
+    if (!hasNotificationApi || Notification.permission !== 'granted') return;
+    try {
+        if (hasServiceWorker) {
+            const reg = await navigator.serviceWorker.ready;
+            if (reg && reg.showNotification) {
+                reg.showNotification('Hər Gün Ərəbcə', {
+                    body: message,
+                    icon: 'icons/icon-192.png',
+                    badge: 'icons/icon-192.png'
+                });
+                return;
+            }
+        }
+        new Notification('Hər Gün Ərəbcə', { body: message, icon: 'icons/icon-192.png' });
+    } catch (e) {
+        // Bildiriş göstərilə bilmədi, tətbiq normal işləməyə davam edir
+    }
+}
+
+async function registerPeriodicReminder() {
+    try {
+        if (!('serviceWorker' in navigator)) return;
+        const reg = await navigator.serviceWorker.ready;
+        if (!('periodicSync' in reg)) return;
+        const status = await navigator.permissions.query({ name: 'periodic-background-sync' });
+        if (status.state === 'granted') {
+            await reg.periodicSync.register('daily-reminder', { minInterval: 20 * 60 * 60 * 1000 });
+        }
+    } catch (e) {
+        // Periodic Background Sync dəstəklənmir və ya icazə yoxdur — foreground fallback davam edir
+    }
+}
+
+async function enableNotifications(time) {
+    const { hasNotificationApi } = getNotificationSupportInfo();
+    if (!hasNotificationApi) {
+        notificationSettings.enabled = false;
+        saveNotificationSettings();
+        showStatsSection();
+        return;
+    }
+    let permission = Notification.permission;
+    if (permission === 'default') {
+        permission = await Notification.requestPermission();
+    }
+    if (permission === 'granted') {
+        notificationSettings.enabled = true;
+        notificationSettings.time = time || notificationSettings.time;
+        saveNotificationSettings();
+        registerPeriodicReminder();
+    } else {
+        notificationSettings.enabled = false;
+        saveNotificationSettings();
+    }
+    showStatsSection();
+}
+
+function disableNotifications() {
+    notificationSettings.enabled = false;
+    saveNotificationSettings();
+    showStatsSection();
+}
+
+function onNotificationToggle(checkbox) {
+    const timeInput = document.getElementById('notif-time-input');
+    const time = timeInput ? timeInput.value : notificationSettings.time;
+    if (checkbox.checked) {
+        enableNotifications(time);
+    } else {
+        disableNotifications();
+    }
+}
+
+function saveNotificationTime() {
+    const timeInput = document.getElementById('notif-time-input');
+    if (!timeInput) return;
+    notificationSettings.time = timeInput.value;
+    saveNotificationSettings();
+    showStatsSection();
+}
+
+function sendTestNotification() {
+    const { hasNotificationApi } = getNotificationSupportInfo();
+    if (!hasNotificationApi) {
+        alert('Bu brauzer bildirişləri dəstəkləmir.');
+        return;
+    }
+    if (Notification.permission === 'granted') {
+        showLocalNotification('Bu bir sınaq bildirişidir 👋');
+    } else {
+        enableNotifications(notificationSettings.time);
+    }
+}
+
+function maybeShowDailyReminder() {
+    const { hasNotificationApi } = getNotificationSupportInfo();
+    if (!hasNotificationApi || !notificationSettings.enabled) return;
+    if (Notification.permission !== 'granted') return;
+
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+    if (notificationSettings.lastNotifiedDate === today) return;
+
+    const [h, m] = (notificationSettings.time || '19:00').split(':').map(Number);
+    const reminderMoment = new Date();
+    reminderMoment.setHours(h, m, 0, 0);
+
+    if (now >= reminderMoment) {
+        const msg = REMINDER_MESSAGES[Math.floor(Math.random() * REMINDER_MESSAGES.length)];
+        showLocalNotification(msg);
+        notificationSettings.lastNotifiedDate = today;
+        saveNotificationSettings();
+    }
+}
+
+function renderNotificationCardHtml() {
+    const { hasNotificationApi } = getNotificationSupportInfo();
+    const permission = hasNotificationApi ? Notification.permission : 'unsupported';
+    const checked = notificationSettings.enabled && permission === 'granted' ? 'checked' : '';
+
+    let statusText = '';
+    if (!hasNotificationApi) {
+        statusText = 'Bu brauzer bildirişləri dəstəkləmir.';
+    } else if (permission === 'denied') {
+        statusText = 'Bildirişlərə icazə verilməyib. Brauzer ayarlarından sayt icazələrini dəyişməlisiniz.';
+    } else if (notificationSettings.enabled) {
+        statusText = `Hər gün ~${notificationSettings.time} vaxtı xatırlatma göndəriləcək (tətbiq açıq və ya bəzi telefonlarda arxa fonda olduqda). Zəmanətli deyil, brauzer dəstəyindən asılıdır.`;
+    } else {
+        statusText = 'Xatırlatmaları aktiv etmək üçün düyməni açın.';
+    }
+
+    return `
+        <div class="notif-card">
+            <h3 class="font-semibold mb-2">🔔 Günlük xatırlatma</h3>
+            <div class="notif-row">
+                <span class="text-white-75">Bildirişlər</span>
+                <label class="switch">
+                    <input type="checkbox" ${checked} ${!hasNotificationApi || permission === 'denied' ? 'disabled' : ''} onchange="onNotificationToggle(this)">
+                    <span class="slider-toggle"></span>
+                </label>
+            </div>
+            <div class="notif-row">
+                <span class="text-white-75">Xatırlatma vaxtı</span>
+                <input type="time" id="notif-time-input" class="notif-time-input" value="${notificationSettings.time}" onchange="saveNotificationTime()" ${!hasNotificationApi || permission === 'denied' ? 'disabled' : ''}>
+            </div>
+            <p class="notif-status">${statusText}</p>
+            <button class="glass-button notif-test-btn" onclick="sendTestNotification()" ${!hasNotificationApi || permission === 'denied' ? 'disabled' : ''}>Sınaq bildirişi göndər</button>
+        </div>
+    `;
+}
+
 // ==================== EVENT LISTENERS ====================
 document.getElementById('btn-verbs').addEventListener('click', () => showVerbsSection());
 document.getElementById('btn-dialogues').addEventListener('click', () => showDialoguesSection());
 document.getElementById('btn-tests').addEventListener('click', () => showTestModeSelect());
+document.getElementById('btn-flashcards').addEventListener('click', () => showFlashcardModeSelect());
 document.getElementById('btn-stats').addEventListener('click', () => showStatsSection());
+document.getElementById('theme-toggle-btn').addEventListener('click', () => toggleTheme());
 
-// Başlanğıcda: seriyanı yenilə, nişanları yoxla, ana menyunu göstər
+// Başlanğıcda: temanı tətbiq et, versiyanı göstər, seriyanı yenilə, nişanları yoxla, ana menyunu göstər
+initTheme();
+initVersionTag();
 updateStreakOnVisit();
 checkBadges();
 showMainMenu();
+
+// Offline istifadə üçün Service Worker qeydiyyatı (PWA)
+if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {
+            // Qeydiyyat alınmasa (məs. fayl protokolu ilə açılıbsa) tətbiq normal işləməyə davam edir
+        });
+    });
+}
+
+// Günlük bildiriş: yüklənəndə yoxla, tətbiq açıq qalarsa hər dəqiqə yenidən yoxla,
+// aktivdirsə arxa fon sinxronizasiyasını (dəstəklənən brauzerlərdə) qeydə al
+maybeShowDailyReminder();
+if (typeof window !== 'undefined' && window.setInterval) {
+    window.setInterval(maybeShowDailyReminder, 60000);
+}
+if (notificationSettings.enabled) {
+    registerPeriodicReminder();
+}
