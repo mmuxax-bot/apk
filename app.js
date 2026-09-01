@@ -1,5 +1,5 @@
 // app.js
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.1.1';
 
 // ==================== STATE ====================
 let learnedVerbs = JSON.parse(localStorage.getItem('learnedVerbs') || '[]');
@@ -347,24 +347,72 @@ function clampIndex(index, length) {
 }
 
 // ==================== TTS (Tələffüz) ====================
-function speakArabic(text) {
-    if (!text || typeof window === 'undefined' || !window.speechSynthesis) {
-        alert('Bu brauzer səsli tələffüzü dəstəkləmir.');
-        return;
-    }
-    window.speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = 'ar-SA';
-    utter.rate = 0.85;
-    utter.pitch = 1;
-    const voices = window.speechSynthesis.getVoices();
-    const arVoice = voices.find(v => v.lang && v.lang.startsWith('ar'));
-    if (arVoice) utter.voice = arVoice;
-    window.speechSynthesis.speak(utter);
+let cachedVoices = [];
+
+function loadVoices() {
+    if (typeof speechSynthesis === 'undefined') return [];
+    const voices = speechSynthesis.getVoices() || [];
+    if (voices.length) cachedVoices = voices;
+    return cachedVoices.length ? cachedVoices : voices;
 }
 
 if (typeof speechSynthesis !== 'undefined') {
-    speechSynthesis.onvoiceschanged = () => {};
+    speechSynthesis.onvoiceschanged = () => { loadVoices(); };
+    // Bəzi brauzerlərdə dərhal yükləməyə çalış
+    try { loadVoices(); } catch (e) {}
+}
+
+function speakArabic(text) {
+    if (!text) return;
+
+    // file:// protokolunda çox vaxt işləmir
+    if (typeof location !== 'undefined' && location.protocol === 'file:') {
+        alert('Səsli tələffüz yalnız internetdə (https) işləyir.\nGitHub Pages və ya digər saytda açın.');
+        return;
+    }
+
+    if (typeof window === 'undefined' || typeof speechSynthesis === 'undefined' || !window.speechSynthesis) {
+        alert('Bu brauzer səsli tələffüzü dəstəkləmir.\nChrome və ya Samsung Internet tövsiyə olunur.');
+        return;
+    }
+
+    try {
+        speechSynthesis.cancel();
+
+        const utter = new SpeechSynthesisUtterance(String(text));
+        utter.lang = 'ar-SA';
+        utter.rate = 0.85;
+        utter.pitch = 1;
+        utter.volume = 1;
+
+        const voices = loadVoices();
+        // Əvvəl ərəbcə səs axtar, yoxdursa hər hansı səs
+        let chosen = voices.find(v => v.lang && (v.lang.startsWith('ar') || v.lang.includes('Arab')));
+        if (!chosen && voices.length) {
+            // Bəzi cihazlarda ərəbcə səs yoxdur, amma default ilə də oxuya bilər
+            chosen = voices.find(v => v.default) || voices[0];
+        }
+        if (chosen) {
+            utter.voice = chosen;
+            // Əgər ərəbcə deyilsə belə lang-i saxla
+            if (chosen.lang && chosen.lang.startsWith('ar')) {
+                utter.lang = chosen.lang;
+            }
+        }
+
+        utter.onerror = (e) => {
+            console.warn('TTS error:', e);
+            // Xəta olduqda istifadəçiyə məlumat ver (bir dəfə)
+            if (e && e.error === 'not-allowed') {
+                alert('Səs icazəsi verilməyib. Brauzer ayarlarından səsə icazə verin.');
+            }
+        };
+
+        speechSynthesis.speak(utter);
+    } catch (err) {
+        console.warn('TTS failed:', err);
+        alert('Tələffüz işə düşmədi. Brauzerinizi yeniləyin və ya Chrome istifadə edin.');
+    }
 }
 
 // ==================== AXTARIŞ ====================
