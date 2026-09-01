@@ -1,7 +1,7 @@
 // sw.js — "Hər Gün Ərəbcə" üçün offline dəstək
 // Cache adı versiya ilə bağlıdır: app yeniləndikdə bu dəyəri artırın (məs. v1.1.0 -> v1.2.0),
 // bu köhnə keşin təmizlənib yeni faylların yüklənməsini təmin edir.
-const CACHE_NAME = 'hergun-erebce-cache-v1.0.0';
+const CACHE_NAME = 'hergun-erebce-cache-v1.1.0';
 
 const ASSETS_TO_CACHE = [
   './',

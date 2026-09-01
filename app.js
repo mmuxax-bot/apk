@@ -1,5 +1,5 @@
 // app.js
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.1.0';
 
 // ==================== STATE ====================
 let learnedVerbs = JSON.parse(localStorage.getItem('learnedVerbs') || '[]');
@@ -198,9 +198,67 @@ function showStatsSection() {
 
             ${renderNotificationCardHtml()}
 
+            <div class="mt-4">
+                <button onclick="exportProgress()" class="export-btn">⬇️ Proqressi yüklə (JSON)</button>
+                <button onclick="document.getElementById('import-file').click()" class="export-btn" style="margin-top:8px;">⬆️ Proqressi yüklə</button>
+                <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="importProgress(event)">
+            </div>
+
             <button onclick="resetAllProgress()" class="glass-button mt-4" style="background: rgba(248,113,113,0.15); border-color: rgba(248,113,113,0.4);">Proqressi sıfırla</button>
         </div>
     `;
+}
+
+function exportProgress() {
+    const data = {
+        version: APP_VERSION,
+        exportedAt: new Date().toISOString(),
+        learnedVerbs,
+        learnedDialogues,
+        answeredQuestions,
+        favoriteVerbs,
+        xp,
+        earnedBadges,
+        testStats,
+        streakData,
+        theme: localStorage.getItem('theme') || 'dark',
+        notificationSettings
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `hergun-erebce-progress-${todayStr()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function importProgress(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (Array.isArray(data.learnedVerbs)) { learnedVerbs = data.learnedVerbs; saveLearnedVerbs(); }
+            if (Array.isArray(data.learnedDialogues)) { learnedDialogues = data.learnedDialogues; saveLearnedDialogues(); }
+            if (Array.isArray(data.answeredQuestions)) { answeredQuestions = data.answeredQuestions; saveAnsweredQuestions(); }
+            if (Array.isArray(data.favoriteVerbs)) { favoriteVerbs = data.favoriteVerbs; saveFavoriteVerbs(); }
+            if (typeof data.xp === 'number') { xp = data.xp; localStorage.setItem('xp', String(xp)); }
+            if (Array.isArray(data.earnedBadges)) { earnedBadges = data.earnedBadges; localStorage.setItem('earnedBadges', JSON.stringify(earnedBadges)); }
+            if (data.testStats) { testStats = data.testStats; localStorage.setItem('testStats', JSON.stringify(testStats)); }
+            if (data.streakData) { streakData = data.streakData; localStorage.setItem('streakData', JSON.stringify(streakData)); }
+            if (data.theme) { localStorage.setItem('theme', data.theme); applyTheme(data.theme); }
+            if (data.notificationSettings) { notificationSettings = data.notificationSettings; saveNotificationSettings(); }
+            checkBadges();
+            alert('Proqress uğurla yükləndi!');
+            showStatsSection();
+        } catch (err) {
+            alert('Fayl oxuna bilmədi. Düzgün JSON formatında olmalıdır.');
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
 }
 
 // ==================== UTILITY FUNCTIONS ====================
@@ -272,6 +330,7 @@ function resetAllProgress() {
 }
 
 function normalizeArabic(str) {
+    if (!str) return '';
     return str
         .replace(/[\u064B-\u0652\u0670\u0640]/g, '')
         .replace(/[أإآٱ]/g, 'ا')
@@ -287,6 +346,52 @@ function clampIndex(index, length) {
     return index;
 }
 
+// ==================== TTS (Tələffüz) ====================
+function speakArabic(text) {
+    if (!text || typeof window === 'undefined' || !window.speechSynthesis) {
+        alert('Bu brauzer səsli tələffüzü dəstəkləmir.');
+        return;
+    }
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'ar-SA';
+    utter.rate = 0.85;
+    utter.pitch = 1;
+    const voices = window.speechSynthesis.getVoices();
+    const arVoice = voices.find(v => v.lang && v.lang.startsWith('ar'));
+    if (arVoice) utter.voice = arVoice;
+    window.speechSynthesis.speak(utter);
+}
+
+if (typeof speechSynthesis !== 'undefined') {
+    speechSynthesis.onvoiceschanged = () => {};
+}
+
+// ==================== AXTARIŞ ====================
+function searchVerbs(query) {
+    if (!query || !query.trim()) return verbsData.slice();
+    const q = query.trim().toLowerCase();
+    const qAr = normalizeArabic(query);
+    return verbsData.filter(v => {
+        const meaning = (v.meaning || '').toLowerCase();
+        const arabic = normalizeArabic(v.arabic || '');
+        const past = normalizeArabic(v.forms?.past?.arabic || '');
+        const present = normalizeArabic(v.forms?.present?.arabic || '');
+        return meaning.includes(q) || arabic.includes(qAr) || past.includes(qAr) || present.includes(qAr) || String(v.id).includes(q);
+    });
+}
+
+function searchDialogues(query) {
+    if (!query || !query.trim()) return dialoguesData.slice();
+    const q = query.trim().toLowerCase();
+    const qAr = normalizeArabic(query);
+    return dialoguesData.filter(d => {
+        const title = (d.title || '').toLowerCase();
+        const text = (d.dialogue || []).map(x => (x.arabic + ' ' + x.translation).toLowerCase()).join(' ');
+        return title.includes(q) || text.includes(q) || normalizeArabic(text).includes(qAr) || String(d.id).includes(q);
+    });
+}
+
 // ==================== RENDER FUNCTIONS ====================
 function showMainMenu() {
     document.getElementById('content-area').innerHTML = '';
@@ -296,10 +401,19 @@ function showMainMenu() {
 }
 
 // Feillər bölməsi
+let verbListFilter = 'all'; // all | unlearned | learned | favorites
+let verbSearchQuery = '';
+
 function showVerbsSection(index) {
     const content = document.getElementById('content-area');
     content.style.display = 'block';
     document.getElementById('main-menu').style.display = 'none';
+
+    // Əgər index verilməyibsə və axtarış/list rejimi aktivdirsə list göstər
+    if (index === undefined && (verbSearchQuery || verbListFilter !== 'all')) {
+        showVerbsList();
+        return;
+    }
 
     if (index === undefined) {
         const nextUnlearned = getNextUnlearnedVerb();
@@ -309,6 +423,7 @@ function showVerbsSection(index) {
                     <p style="font-size: 2rem; margin-bottom: 16px;">🎉</p>
                     <h2 class="text-xl font-bold mb-2">Bütün feilləri öyrəndiniz!</h2>
                     <p class="text-white-75 mb-4">Yeni feil əlavə edildikdə burada görünəcək.</p>
+                    <button onclick="showVerbsList()" class="glass-button px-6 py-3 mb-3">Siyahıya bax</button>
                     <button onclick="resetAllProgress()" class="glass-button px-6 py-3">Proqressi sıfırla</button>
                 </div>
             `;
@@ -342,7 +457,9 @@ function showVerbsSection(index) {
                     <p class="text-white-75" style="font-size: 0.875rem;">${verb.arabic} - ${verb.meaning}</p>
                 </div>
                 <div style="display:flex; align-items:center; gap:6px;">
+                    <button onclick="speakArabic('${verb.arabic.replace(/'/g, "\\'")}')" class="tts-btn" title="Tələffüz et">🔊</button>
                     <button onclick="toggleFavoriteAndRerenderVerb(${verb.id})" class="fav-star-btn" title="Favoritə əlavə et">${isFavorite ? '⭐' : '☆'}</button>
+                    <button onclick="showVerbsList()" class="mini-btn" title="Siyahı">☰</button>
                     <button onclick="showMainMenu()" class="close-btn">✕</button>
                 </div>
             </div>
@@ -366,6 +483,65 @@ function showVerbsSection(index) {
     `;
 }
 
+function showVerbsList() {
+    const content = document.getElementById('content-area');
+    content.style.display = 'block';
+    document.getElementById('main-menu').style.display = 'none';
+
+    let list = searchVerbs(verbSearchQuery);
+    if (verbListFilter === 'unlearned') list = list.filter(v => !learnedVerbs.includes(v.id));
+    else if (verbListFilter === 'learned') list = list.filter(v => learnedVerbs.includes(v.id));
+    else if (verbListFilter === 'favorites') list = list.filter(v => favoriteVerbs.includes(v.id));
+
+    const itemsHtml = list.slice(0, 80).map(v => {
+        const learned = learnedVerbs.includes(v.id);
+        const fav = favoriteVerbs.includes(v.id);
+        const statusClass = fav ? 'favorite' : (learned ? 'learned' : 'unlearned');
+        const idx = verbsData.findIndex(x => x.id === v.id);
+        return `
+            <div class="verb-list-item" onclick="showVerbsSection(${idx})">
+                <span class="status-dot ${statusClass}"></span>
+                <span class="meaning">${v.meaning}</span>
+                <span class="arabic-text">${v.arabic}</span>
+            </div>
+        `;
+    }).join('');
+
+    const moreNote = list.length > 80 ? `<p class="text-white-50 text-center mt-2" style="font-size:0.8rem;">İlk 80 nəticə göstərilir (${list.length} tapıldı). Axtarışı daraldın.</p>` : '';
+
+    content.innerHTML = `
+        <div class="glass-card fade-in">
+            <div class="flex-between mb-3">
+                <h2 class="text-xl font-bold">Feillər siyahısı</h2>
+                <button onclick="showMainMenu()" class="close-btn">✕</button>
+            </div>
+            <input type="search" class="search-box" id="verb-search-input" placeholder="Axtar: məna, ərəbcə və ya ID..." value="${verbSearchQuery.replace(/"/g, '&quot;')}" oninput="onVerbSearch(this.value)">
+            <div class="filter-row">
+                <span class="filter-chip ${verbListFilter==='all'?'active':''}" onclick="setVerbFilter('all')">Hamısı</span>
+                <span class="filter-chip ${verbListFilter==='unlearned'?'active':''}" onclick="setVerbFilter('unlearned')">Öyrənilməmiş</span>
+                <span class="filter-chip ${verbListFilter==='learned'?'active':''}" onclick="setVerbFilter('learned')">Öyrənilmiş</span>
+                <span class="filter-chip ${verbListFilter==='favorites'?'active':''}" onclick="setVerbFilter('favorites')">⭐ Favorit</span>
+            </div>
+            <p class="text-white-50 mb-2" style="font-size:0.8rem;">${list.length} feil</p>
+            <div style="max-height: 55vh; overflow-y: auto;">${itemsHtml || '<p class="text-center text-white-50">Nəticə yoxdur</p>'}</div>
+            ${moreNote}
+            <button onclick="showVerbsSection()" class="glass-button mt-3 py-3">Öyrənməyə davam et</button>
+        </div>
+    `;
+    const inp = document.getElementById('verb-search-input');
+    if (inp) { inp.focus(); const len = inp.value.length; inp.setSelectionRange(len, len); }
+}
+
+function onVerbSearch(val) {
+    verbSearchQuery = val;
+    showVerbsList();
+}
+
+function setVerbFilter(f) {
+    verbListFilter = f;
+    showVerbsList();
+}
+
 function navigateVerb(delta) {
     showVerbsSection(currentVerbIndex + delta);
 }
@@ -385,10 +561,16 @@ function openFormExamples(verbId, formKey) {
 
     let examplesHtml = '';
     formData.examples.forEach(ex => {
+        const safeAr = (ex.arabic || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
         examplesHtml += `
             <div class="rounded-xl mb-2" style="background: rgba(255,255,255,0.05); padding: 12px;">
-                <p class="arabic-text mb-1">${ex.arabic}</p>
-                <p class="text-white-75" style="font-size: 0.875rem; direction: ltr; text-align: left;">${ex.translation}</p>
+                <div style="display:flex; align-items:flex-start; gap:8px;">
+                    <button onclick="speakArabic('${safeAr}')" class="tts-btn" title="Tələffüz">🔊</button>
+                    <div style="flex:1;">
+                        <p class="arabic-text mb-1">${ex.arabic}</p>
+                        <p class="text-white-75" style="font-size: 0.875rem; direction: ltr; text-align: left;">${ex.translation}</p>
+                    </div>
+                </div>
             </div>
         `;
     });
@@ -424,10 +606,18 @@ function markVerbLearned(id) {
 }
 
 // Dialoqlar bölməsi
+let dialogueSearchQuery = '';
+let dialogueListFilter = 'all';
+
 function showDialoguesSection(index) {
     const content = document.getElementById('content-area');
     content.style.display = 'block';
     document.getElementById('main-menu').style.display = 'none';
+
+    if (index === undefined && (dialogueSearchQuery || dialogueListFilter !== 'all')) {
+        showDialoguesList();
+        return;
+    }
 
     if (index === undefined) {
         const nextUnlearned = getNextUnlearnedDialogue();
@@ -437,6 +627,7 @@ function showDialoguesSection(index) {
                     <p style="font-size: 2rem; margin-bottom: 16px;">🎉</p>
                     <h2 class="text-xl font-bold mb-2">Bütün dialoqları öyrəndiniz!</h2>
                     <p class="text-white-75 mb-4">Yeni dialoq əlavə edildikdə burada görünəcək.</p>
+                    <button onclick="showDialoguesList()" class="glass-button px-6 py-3 mb-3">Siyahıya bax</button>
                     <button onclick="resetAllProgress()" class="glass-button px-6 py-3">Proqressi sıfırla</button>
                 </div>
             `;
@@ -451,10 +642,16 @@ function showDialoguesSection(index) {
 
     let dialogueHtml = '';
     dialogue.dialogue.forEach((line) => {
+        const safeAr = (line.arabic || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
         dialogueHtml += `
             <div class="rounded-xl mb-2" style="background: rgba(255,255,255,0.05); padding: 12px;">
-                <p class="arabic-text mb-1">${line.arabic}</p>
-                <p class="dialogue-translation">${line.translation}</p>
+                <div style="display:flex; align-items:flex-start; gap:8px;">
+                    <button onclick="speakArabic('${safeAr}')" class="tts-btn" title="Tələffüz">🔊</button>
+                    <div style="flex:1;">
+                        <p class="arabic-text mb-1">${line.arabic}</p>
+                        <p class="dialogue-translation">${line.translation}</p>
+                    </div>
+                </div>
             </div>
         `;
     });
@@ -463,7 +660,10 @@ function showDialoguesSection(index) {
         <div class="glass-card fade-in">
             <div class="flex-between mb-4">
                 <h2 class="text-2xl font-bold">${dialogue.title}</h2>
-                <button onclick="showMainMenu()" class="close-btn">✕</button>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <button onclick="showDialoguesList()" class="mini-btn" title="Siyahı">☰</button>
+                    <button onclick="showMainMenu()" class="close-btn">✕</button>
+                </div>
             </div>
             <div class="progress-text">${currentDialogueIndex + 1} / ${dialoguesData.length}</div>
             <div class="text-right mb-2">
@@ -481,6 +681,58 @@ function showDialoguesSection(index) {
             </div>
         </div>
     `;
+}
+
+function showDialoguesList() {
+    const content = document.getElementById('content-area');
+    content.style.display = 'block';
+    document.getElementById('main-menu').style.display = 'none';
+
+    let list = searchDialogues(dialogueSearchQuery);
+    if (dialogueListFilter === 'unlearned') list = list.filter(d => !learnedDialogues.includes(d.id));
+    else if (dialogueListFilter === 'learned') list = list.filter(d => learnedDialogues.includes(d.id));
+
+    const itemsHtml = list.slice(0, 80).map(d => {
+        const learned = learnedDialogues.includes(d.id);
+        const idx = dialoguesData.findIndex(x => x.id === d.id);
+        return `
+            <div class="verb-list-item" onclick="showDialoguesSection(${idx})">
+                <span class="status-dot ${learned ? 'learned' : 'unlearned'}"></span>
+                <span class="meaning" style="min-width:auto;flex:1;">${d.title}</span>
+                <span class="text-white-50" style="font-size:0.75rem;">#${d.id}</span>
+            </div>
+        `;
+    }).join('');
+
+    content.innerHTML = `
+        <div class="glass-card fade-in">
+            <div class="flex-between mb-3">
+                <h2 class="text-xl font-bold">Dialoqlar siyahısı</h2>
+                <button onclick="showMainMenu()" class="close-btn">✕</button>
+            </div>
+            <input type="search" class="search-box" id="dialogue-search-input" placeholder="Axtar: başlıq və ya söz..." value="${dialogueSearchQuery.replace(/"/g, '&quot;')}" oninput="onDialogueSearch(this.value)">
+            <div class="filter-row">
+                <span class="filter-chip ${dialogueListFilter==='all'?'active':''}" onclick="setDialogueFilter('all')">Hamısı</span>
+                <span class="filter-chip ${dialogueListFilter==='unlearned'?'active':''}" onclick="setDialogueFilter('unlearned')">Öyrənilməmiş</span>
+                <span class="filter-chip ${dialogueListFilter==='learned'?'active':''}" onclick="setDialogueFilter('learned')">Öyrənilmiş</span>
+            </div>
+            <p class="text-white-50 mb-2" style="font-size:0.8rem;">${list.length} dialoq</p>
+            <div style="max-height: 55vh; overflow-y: auto;">${itemsHtml || '<p class="text-center text-white-50">Nəticə yoxdur</p>'}</div>
+            <button onclick="showDialoguesSection()" class="glass-button mt-3 py-3">Öyrənməyə davam et</button>
+        </div>
+    `;
+    const inp = document.getElementById('dialogue-search-input');
+    if (inp) { inp.focus(); const len = inp.value.length; inp.setSelectionRange(len, len); }
+}
+
+function onDialogueSearch(val) {
+    dialogueSearchQuery = val;
+    showDialoguesList();
+}
+
+function setDialogueFilter(f) {
+    dialogueListFilter = f;
+    showDialoguesList();
 }
 
 function navigateDialogue(delta) {
@@ -994,6 +1246,7 @@ function renderFlashcard() {
                     <div class="flashcard-inner">
                         <div class="flashcard-face flashcard-front">
                             <button class="fav-star-btn" style="position:absolute; top:10px; right:14px;" onclick="event.stopPropagation(); toggleFavoriteAndRerenderFlashcard(${verb.id})">${isFavorite ? '⭐' : '☆'}</button>
+                            <button class="tts-btn" style="position:absolute; top:10px; left:14px;" onclick="event.stopPropagation(); speakArabic('${(verb.arabic || '').replace(/'/g, "\\'")}')" title="Tələffüz">🔊</button>
                             <p class="arabic-text text-4xl font-bold">${verb.arabic}</p>
                             <p class="flip-hint">Çevirmək üçün toxunun</p>
                         </div>

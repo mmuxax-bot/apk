@@ -46,4 +46,14 @@ Statistika səhifəsində "🔔 Günlük xatırlatma" bölməsindən aktivləşd
 
 ## Versiya
 
-Cari versiya ekranın altında göstərilir (məs. `v1.0.0`). Sistem hələ real istifadəyə verilmədiyi üçün versiya `v1.0.0`-da saxlanılır; rəsmi istifadəyə verildikdən sonra: yeni funksiya əlavə olunanda "Kiçik" rəqəm (`v1.1.0`), xəta düzəlişində "Düzəliş" rəqəmi (`v1.0.1`) artacaq.
+Cari versiya: **v1.1.0**
+
+### v1.1.0 yenilikləri
+- Ərəbcə tələffüz (🔊 TTS) — feillər, nümunə cümlələr və dialoqlarda
+- Feillər və dialoqlar üçün axtarış + filtr (öyrənilmiş / öyrənilməmiş / favorit)
+- Siyahı görünüşü (☰) — bütün feil və dialoqlara tez baxış
+- Proqressi JSON kimi yükləmə / ixrac etmə (statistika səhifəsində)
+- Daha yaxşı ərəbcə şrifti (Noto Naskh Arabic + Amiri)
+- Service Worker keş versiyası yeniləndi
+
+Ekranın altında versiya göstərilir. Yeni funksiya əlavə olunanda "Kiçik" rəqəm (`v1.2.0`), xəta düzəlişində "Düzəliş" rəqəmi (`v1.1.1`) artacaq.
