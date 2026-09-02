@@ -14,8 +14,8 @@
 
 - **🔍 Axtarış** — Feillər bölməsində 🔍 ikonuna basıb ərəbcə və ya azərbaycanca yazaraq istənilən sözü tez tapmaq
 - **🧠 Ağıllı təkrar (Spaced Repetition)** — Flash kartlarda "Bilirdim/Bilmirdim" cavablarına görə hər söz üçün fərdi təkrar intervalı hesablanır (bilməyəni tez-tez, bildiyini seyrək göstərir)
-- **🔤 Şrift ölçüsü** — Statistika → Ayarlar bölməsində sürüşdürücü ilə ərəb mətninin ölçüsünü dəyişmək
-- **👁️ Hərəkəsiz oxu rejimi** — Statistika → Ayarlar bölməsində keçid, aktiv olanda bütün ərəb mətnlərindən hərəkələr gizlədilir
+- **🔤 Şrift ölçüsü** — başlıqdakı ⚙️ Ayarlar bölməsində sürüşdürücü ilə ərəb mətninin ölçüsünü dəyişmək
+- **👁️ Hərəkəsiz oxu rejimi** — başlıqdakı ⚙️ Ayarlar bölməsində keçid, aktiv olanda bütün ərəb mətnlərindən hərəkələr gizlədilir
 - **❌ Mənim Səhvlərim** — Testlərdə və ya flash kartlarda səhv cavablandırılan sözlər/suallar avtomatik toplanır; Testlər → "Çətin suallar" və Flash kartlar → "Çətin sözlər" bölmələrindən təkrar edilə bilər
 - **🎯 Gündəlik hədəf** — Ana səhifədə vizual halqa (progress ring) ilə günlük XP hədəfinizi (20/50/100 XP) izləmək
 
@@ -34,7 +34,7 @@ Tətbiq indi "Progressive Web App" kimi qurulub:
 
 ### Günlük bildiriş xatırlatması
 
-Statistika səhifəsində "🔔 Günlük xatırlatma" bölməsindən aktivləşdirilir:
+Başlıqdakı ⚙️ Ayarlar bölməsində "🔔 Günlük xatırlatma" kartından aktivləşdirilir:
 - Bildirişlərə icazə verib, xatırlatma vaxtını seçirsiniz (məs. 19:00).
 - Tətbiq açıq olduğu müddətdə (və ya Chrome/Android-də quraşdırılmış PWA arxa fonda "Periodic Background Sync" dəstəkləyirsə) seçilən vaxtdan sonra gündə bir dəfə bildiriş göndərilməyə çalışılır.
 - **Vacib məhdudiyyət:** bu, real push-bildiriş serveri olmadığı üçün 100% zəmanətli deyil — brauzer dəstəyindən (əsasən Chrome/Android-də işləyir, Safari/iOS-da məhdud və ya işləməyə bilər), telefonun enerji qənaəti ayarlarından və tətbiqin nə qədər tez-tez açıldığından asılıdır. Tam zəmanətli bildiriş üçün arxa server (Web Push) lazımdır.

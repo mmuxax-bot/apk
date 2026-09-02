@@ -85,6 +85,22 @@
             justify-content: center;
             color: var(--text-color);
         }
+        .settings-toggle-btn {
+            position: absolute;
+            top: 12px;
+            left: 0;
+            background: var(--overlay-15);
+            border: 1px solid var(--overlay-25);
+            border-radius: 50%;
+            width: 38px;
+            height: 38px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-color);
+        }
         .glass-card {
             background: var(--card-bg);
             border: 1px solid var(--overlay-20);
@@ -215,17 +231,28 @@
             border-radius: 10px;
             padding: 10px 12px;
         }
-        .stats-bar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+        .stats-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 14px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        .stats-bar::-webkit-scrollbar { display: none; }
         .stat-pill {
             background: var(--overlay-15);
             border: 1px solid var(--overlay-20);
             border-radius: 20px;
             padding: 6px 12px;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             font-weight: 600;
             display: flex;
             align-items: center;
             gap: 4px;
+            flex-shrink: 0;
+            white-space: nowrap;
         }
         .xp-bar-wrap { margin-bottom: 14px; }
         .xp-bar {
@@ -436,6 +463,7 @@
     <div class="container">
         <div class="header">
             <h1>HƏR GÜN ƏRƏBCƏ</h1>
+            <button id="settings-toggle-btn" class="settings-toggle-btn" title="Ayarlar">⚙️</button>
             <button id="theme-toggle-btn" class="theme-toggle-btn" title="Tema dəyiş">🌙</button>
         </div>
 

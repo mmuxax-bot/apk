@@ -250,10 +250,24 @@ function showStatsSection() {
             <h3 class="font-semibold mb-2">Nişanlar</h3>
             <div class="badge-grid">${badgesHtml}</div>
 
+            <button onclick="resetAllProgress()" class="glass-button mt-4" style="background: rgba(248,113,113,0.15); border-color: rgba(248,113,113,0.4);">Proqressi sıfırla</button>
+        </div>
+    `;
+}
+
+function showSettingsSection() {
+    const content = document.getElementById('content-area');
+    content.style.display = 'block';
+    document.getElementById('main-menu').style.display = 'none';
+
+    content.innerHTML = `
+        <div class="glass-card fade-in">
+            <div class="flex-between mb-4">
+                <h2 class="text-2xl font-bold">⚙️ Ayarlar</h2>
+                <button onclick="showMainMenu()" class="close-btn">✕</button>
+            </div>
             ${renderSettingsCardHtml()}
             ${renderNotificationCardHtml()}
-
-            <button onclick="resetAllProgress()" class="glass-button mt-4" style="background: rgba(248,113,113,0.15); border-color: rgba(248,113,113,0.4);">Proqressi sıfırla</button>
         </div>
     `;
 }
@@ -391,8 +405,8 @@ function setHideHarakat(value) {
 
 function toggleHideHarakatSetting(checkbox) {
     setHideHarakat(checkbox.checked);
-    // Açıq olan istənilən ekranı təzələmək üçün ən sadə yol: statistika ekranını yenidən çək
-    showStatsSection();
+    // Açıq olan Ayarlar ekranını təzələmək üçün
+    showSettingsSection();
 }
 
 function applyArabicFontScale() {
@@ -1391,7 +1405,7 @@ async function enableNotifications(time) {
     if (!hasNotificationApi) {
         notificationSettings.enabled = false;
         saveNotificationSettings();
-        showStatsSection();
+        showSettingsSection();
         return;
     }
     let permission = Notification.permission;
@@ -1407,13 +1421,13 @@ async function enableNotifications(time) {
         notificationSettings.enabled = false;
         saveNotificationSettings();
     }
-    showStatsSection();
+    showSettingsSection();
 }
 
 function disableNotifications() {
     notificationSettings.enabled = false;
     saveNotificationSettings();
-    showStatsSection();
+    showSettingsSection();
 }
 
 function onNotificationToggle(checkbox) {
@@ -1431,7 +1445,7 @@ function saveNotificationTime() {
     if (!timeInput) return;
     notificationSettings.time = timeInput.value;
     saveNotificationSettings();
-    showStatsSection();
+    showSettingsSection();
 }
 
 function sendTestNotification() {
@@ -1472,7 +1486,7 @@ function renderSettingsCardHtml() {
     const percentLabel = Math.round(arabicFontScale * 100) + '%';
     return `
         <div class="notif-card">
-            <h3 class="font-semibold mb-2">⚙️ Ayarlar</h3>
+            <h3 class="font-semibold mb-2">🔤 Görünüş və oxu</h3>
             <div class="notif-row">
                 <span class="text-white-75">Ərəb şrifti ölçüsü</span>
                 <span id="arabic-scale-label" class="text-white-75">${percentLabel}</span>
@@ -1534,6 +1548,7 @@ document.getElementById('btn-tests').addEventListener('click', () => showTestMod
 document.getElementById('btn-flashcards').addEventListener('click', () => showFlashcardModeSelect());
 document.getElementById('btn-stats').addEventListener('click', () => showStatsSection());
 document.getElementById('theme-toggle-btn').addEventListener('click', () => toggleTheme());
+document.getElementById('settings-toggle-btn').addEventListener('click', () => showSettingsSection());
 
 // Başlanğıcda: temanı tətbiq et, versiyanı göstər, seriyanı yenilə, nişanları yoxla, ana menyunu göstər
 initTheme();
