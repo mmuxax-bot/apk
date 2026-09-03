@@ -755,7 +755,7 @@ function showTestModeSelect() {
                 <div class="mode-select-icon">📝</div>
                 <div>
                     <div class="mode-select-title">Adi test</div>
-                    <div class="mode-select-desc">Sual-sual, öz sürətinizlə</div>
+                    <div class="mode-select-desc">3 500 dini sual • sual-sual, öz sürətinizlə</div>
                 </div>
             </div>
             <div class="mode-select-card" onclick="startDifficultQuestionsReview()">
@@ -1695,56 +1695,132 @@ function getTextToSpeechPlugin() {
 function pickArabicWebVoice() {
     if (typeof speechSynthesis === 'undefined') return null;
     const voices = speechSynthesis.getVoices() || [];
-    // Yalnız "ar" ilə başlayan (ərəbcə) səsləri qəbul et — başqa dilin səsi ilə oxumasın
     return voices.find(v => /^ar([-_]|$)/i.test(v.lang)) || null;
 }
 
-// text: mütləq hərəkəli (harakatlı) orijinal mətn ötürülməlidir — displayArabic() ilə
-// hərəkəsi silinmiş versiya YOX, çünki hərəkələr düzgün tələffüz üçün TTS-ə lazımdır.
+// Android TTS mühərriklərində ar-SA həmişə ayrıca mövcud olmur.
+// Əvvəl cihazın həqiqətən dəstəklədiyi ərəb dilini tapırıq.
+async function getSupportedArabicNativeLanguage(nativePlugin) {
+    const candidates = ['ar-SA', 'ar', 'ar-XA', 'ar-AE', 'ar-EG', 'ar-JO', 'ar-KW', 'ar-MA'];
+
+    if (!nativePlugin) return null;
+
+    try {
+        if (typeof nativePlugin.getSupportedLanguages === 'function') {
+            const result = await nativePlugin.getSupportedLanguages();
+            const languages = Array.isArray(result?.languages) ? result.languages : [];
+
+            // Tam uyğunluğa üstünlük ver, sonra istənilən ərəb locale-ni qəbul et.
+            const exact = candidates.find(c => languages.some(l => String(l).toLowerCase() === c.toLowerCase()));
+            if (exact) return exact;
+
+            const arabic = languages.find(l => /^ar(?:[-_]|$)/i.test(String(l)));
+            if (arabic) return arabic;
+        }
+
+        if (typeof nativePlugin.isLanguageSupported === 'function') {
+            for (const lang of candidates) {
+                const result = await nativePlugin.isLanguageSupported({ lang });
+                if (result?.supported) return lang;
+            }
+        }
+    } catch (e) {
+        console.warn('Ərəb TTS dili yoxlanarkən xəta:', e);
+    }
+
+    return null;
+}
+
+function showTtsWarning(message) {
+    // Səs düyməsinə basıldıqda istifadəçiyə nə baş verdiyini göstər.
+    // Əsas UI-nı pozmamaq üçün qısa toast istifadə edirik.
+    let toast = document.getElementById('tts-warning-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'tts-warning-toast';
+        toast.style.cssText = 'position:fixed;left:16px;right:16px;bottom:88px;z-index:99999;padding:14px 16px;border-radius:14px;background:rgba(15,44,63,.96);color:#fff;text-align:center;font-size:14px;box-shadow:0 8px 30px rgba(0,0,0,.25);';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.style.display = 'block';
+    clearTimeout(window.__ttsWarningTimer);
+    window.__ttsWarningTimer = setTimeout(() => { toast.style.display = 'none'; }, 3500);
+}
+
+// text: mütləq hərəkəli (harakatlı) orijinal mətn ötürülməlidir.
 async function speakArabic(text) {
     if (!text) return;
 
     const nativePlugin = getTextToSpeechPlugin();
     if (nativePlugin) {
         try {
+            // Əvvəlki danışığı dayandır ki, sürətli kliklərdə növbə yaranmasın.
+            if (typeof nativePlugin.stop === 'function') {
+                try { await nativePlugin.stop(); } catch (_) {}
+            }
+
+            let lang = await getSupportedArabicNativeLanguage(nativePlugin);
+
+            if (!lang) {
+                // Ərəb səs paketi quraşdırılmayıbsa Android-in TTS quraşdırma ekranını aç.
+                if (typeof nativePlugin.openInstall === 'function') {
+                    try {
+                        await nativePlugin.openInstall();
+                        showTtsWarning('Ərəb səs paketi tapılmadı. Açılan TTS bölməsindən ərəb dili/səsini quraşdırın.');
+                    } catch (_) {
+                        showTtsWarning('Ərəb səs paketi tapılmadı. Telefonun TTS ayarlarından ərəb dilini quraşdırın.');
+                    }
+                } else {
+                    showTtsWarning('Ərəb səs paketi tapılmadı. Telefonun TTS ayarlarından ərəb dilini quraşdırın.');
+                }
+                return;
+            }
+
             await nativePlugin.speak({
                 text: text,
-                lang: 'ar-SA',
+                lang: lang,
                 rate: 0.85,
                 pitch: 1.0,
                 volume: 1.0,
+                queueStrategy: 0,
                 category: 'ambient'
             });
+            return;
         } catch (e) {
-            // Native TTS mövcud deyil və ya ərəbcə səs paketi quraşdırılmayıb
+            console.error('Native Arabic TTS xətası:', e);
+            showTtsWarning('Səsləndirmə alınmadı. Telefonun TTS mühərrikində ərəb dili/səsinin aktiv olduğuna əmin olun.');
+            return;
         }
-        return;
     }
 
-    // Brauzer/PWA fallback (yalnız test məqsədilə, real APK-da yuxarıdakı yol işləyir)
+    // Brauzer/PWA fallback.
     if (typeof speechSynthesis !== 'undefined') {
         try {
             speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'ar-SA';
             const arVoice = pickArabicWebVoice();
-            if (arVoice) {
-                utterance.voice = arVoice;
-            } else {
-                // Ərəbcə səs tapılmadı — səhv dildə oxumaqdansa heç oxumamaq daha yaxşıdır
+            if (!arVoice) {
+                showTtsWarning('Brauzerdə ərəb səsi tapılmadı.');
                 return;
             }
+            utterance.voice = arVoice;
             utterance.rate = 0.85;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
             speechSynthesis.speak(utterance);
         } catch (e) {
-            // -
+            console.error('Web Arabic TTS xətası:', e);
+            showTtsWarning('Səsləndirmə alınmadı.');
         }
+    } else {
+        showTtsWarning('Bu cihazda mətn səsləndirməsi dəstəklənmir.');
     }
 }
 
 function speakArabicFromEvent(event, text) {
     if (event) event.stopPropagation();
-    speakArabic(text);
+    void speakArabic(text);
 }
 
 // ==================== TƏLƏFFÜZ YOXLAMASI (MİKROFON) ====================
