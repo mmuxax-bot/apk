@@ -1,58 +1,45 @@
-# Hər Gün Ərəbcə
+# Hər Gün Ərəbcə — Capacitor (Android) layihəsi
 
-Ərəbcə öyrənmək üçün sadə veb tətbiq. Feillər, dialoqlar, testlər, flash kartlar, irəliləyiş sistemi (XP, səviyyə, nişanlar) və statistika bölmələrindən ibarətdir.
+Bu, "Hər Gün Ərəbcə" tətbiqinin **əsl Android APK** versiyasıdır. Sadə WebView-wrapper (Appilix və s.) yerinə [Capacitor](https://capacitorjs.com) istifadə olunur ki, bildirişlər kimi funksiyalar native Android sistemi üzərindən, tam etibarlı işləsin.
 
-## Bölmələr
+## Build necə edilir?
 
-- **Feillər** — 350 ərəbcə feil (keçmiş, indiki, əmr formaları və nümunə cümlələrlə), favoritə əlavə etmək və 🔍 axtarış mümkündür
-- **Dialoqlar** — 300 gündəlik dialoq nümunəsi
-- **Testlər** — Adi test, Sürətli cavab, Söz birləşdirmə və "Çətin suallar" təkrarı
-- **Flash kartlar** — Ağıllı təkrar (SRS), Çətin sözlər, Bütün sözlər, Öyrənilməmişlər, Favoritlər
-- **Statistika** — öyrənilən sözlər/dialoqlar/testlər, uğur faizi, seriya, nişanlar, ayarlar (şrift ölçüsü, hərəkəsiz oxu), bildirişlər
+Bax: **[README-TERMUX.md](./README-TERMUX.md)** — Termux-da addım-addım APK build təlimatı.
 
-## Əlavə funksiyalar
+Kompüterdə Android Studio ilə build etmək istəsəniz: `npm install`, sonra `npx cap add android`, sonra `npx cap open android` ilə Android Studio-da açıb adi qaydada build edin.
 
-- **🔍 Axtarış** — Feillər bölməsində 🔍 ikonuna basıb ərəbcə və ya azərbaycanca yazaraq istənilən sözü tez tapmaq
-- **🧠 Ağıllı təkrar (Spaced Repetition)** — Flash kartlarda "Bilirdim/Bilmirdim" cavablarına görə hər söz üçün fərdi təkrar intervalı hesablanır (bilməyəni tez-tez, bildiyini seyrək göstərir)
-- **🔤 Şrift ölçüsü** — başlıqdakı ⚙️ Ayarlar bölməsində sürüşdürücü ilə ərəb mətninin ölçüsünü dəyişmək
-- **👁️ Hərəkəsiz oxu rejimi** — başlıqdakı ⚙️ Ayarlar bölməsində keçid, aktiv olanda bütün ərəb mətnlərindən hərəkələr gizlədilir
-- **❌ Mənim Səhvlərim** — Testlərdə və ya flash kartlarda səhv cavablandırılan sözlər/suallar avtomatik toplanır; Testlər → "Çətin suallar" və Flash kartlar → "Çətin sözlər" bölmələrindən təkrar edilə bilər
-- **🎯 Gündəlik hədəf** — Ana səhifədə vizual halqa (progress ring) ilə günlük XP hədəfinizi (20/50/100 XP) izləmək
+## Play Store-a çıxarmaq
 
-## İstifadə
-
-`index.html` faylını brauzerdə açmaq kifayətdir. Əlavə quraşdırma tələb olunmur.
-
-GitHub Pages ilə yayımlamaq üçün: Settings → Pages → Branch seçib saxlayın, bir neçə dəqiqədən sonra tətbiq canlı linkdə görünəcək.
-
-### Offline istifadə (PWA)
-
-Tətbiq indi "Progressive Web App" kimi qurulub:
-- Telefonda saytı açıb brauzerin menyusundan **"Ana ekrana əlavə et" / "Add to Home Screen"** seçsəniz, tətbiq ikon şəklində quraşdırılır və internetsiz də açılır.
-- Bu, `manifest.json` və `sw.js` (Service Worker) fayllarının əsas fayl və şəkilləri keşləməsi ilə işləyir.
-- **Vacib:** tətbiqdə dəyişiklik edib yenidən yüklədikdən sonra istifadəçilərin köhnə keşlənmiş versiyanı görməməsi üçün `sw.js` faylındakı `CACHE_NAME` dəyərini hər real yeniləmədə artırın.
-
-### Günlük bildiriş xatırlatması
-
-Başlıqdakı ⚙️ Ayarlar bölməsində "🔔 Günlük xatırlatma" kartından aktivləşdirilir:
-- Bildirişlərə icazə verib, xatırlatma vaxtını seçirsiniz (məs. 19:00).
-- Tətbiq açıq olduğu müddətdə (və ya Chrome/Android-də quraşdırılmış PWA arxa fonda "Periodic Background Sync" dəstəkləyirsə) seçilən vaxtdan sonra gündə bir dəfə bildiriş göndərilməyə çalışılır.
-- **Vacib məhdudiyyət:** bu, real push-bildiriş serveri olmadığı üçün 100% zəmanətli deyil — brauzer dəstəyindən (əsasən Chrome/Android-də işləyir, Safari/iOS-da məhdud və ya işləməyə bilər), telefonun enerji qənaəti ayarlarından və tətbiqin nə qədər tez-tez açıldığından asılıdır. Tam zəmanətli bildiriş üçün arxa server (Web Push) lazımdır.
-- "Sınaq bildirişi göndər" düyməsi ilə bildirişin telefonunuzda göründüyünü yoxlaya bilərsiniz.
+Bax: **[PLAY_STORE_GUIDE.md](./PLAY_STORE_GUIDE.md)** — imzalama açarı (keystore) yaratmaq, rəsmi (release) build almaq, Google Play Console-da mağaza səhifəsi qurmaq və göndərmək üçün tam bələdçi. Məxfilik siyasəti hazır fayl kimi `privacy-policy.html`-də var.
 
 ## Fayl strukturu
 
-- `index.html` — əsas səhifə, stillər və PWA meta teqləri
-- `app.js` — əsas məntiq (menyu, öyrənmə, test, flash kart, XP/statistika)
-- `verbs.js` — feillərin məlumat bazası
-- `dialogues.js` — dialoqların məlumat bazası
-- `tests.js` — test suallarının məlumat bazası
-- `manifest.json` — PWA quraşdırma məlumatları (ad, ikon, rənglər)
-- `sw.js` — Service Worker (offline keşləmə)
-- `icons/` — tətbiq ikonları (192px, 512px, maskable, apple-touch)
+- `www/` — tətbiqin veb məzmunu (HTML/CSS/JS, data faylları). Capacitor bunu native "webview" daxilində göstərir.
+  - `app.js` içində `isCapacitorApp()` yoxlaması var: native APK-da işləyəndə bildirişlər üçün `@capacitor/local-notifications` (əsl Android bildirişi), sadə brauzerdə açılanda isə köhnə veb-əsaslı fallback istifadə olunur — yəni eyni kodu həm test üçün brauzerdə, həm də real tətbiqdə işlədə bilərsiniz.
+- `capacitor.config.json` — tətbiqin adı, App ID, ikon rəngləri
+- `package.json` — lazımi Capacitor paketləri (`@capacitor/core`, `@capacitor/android`, `@capacitor/local-notifications`)
+- `resources/` — Android tətbiq ikonu üçün mənbə şəkillər (istəsəniz `npx @capacitor/assets generate` ilə bütün ölçüləri avtomatik yarada bilərsiniz)
+- `android/` — `npx cap add android` işlətdikdən sonra avtomatik yaranacaq (bu zip-də yoxdur, ilk build zamanı yaradılır)
 
-Öyrənilən məlumatlar, favoritlər, XP və nişanlar brauzerin `localStorage`-ında saxlanılır.
+## Nə dəyişdi (əvvəlki veb versiyaya nisbətən)
 
-## Versiya
+- **🔊 Səsləndirmə (tələffüz)** — Feillər, Dialoqlar, Flash kartlar və Gündəlik söz bölmələrində 🔊 ikonuna basaraq sözün/cümlənin **əsl ərəb dilində** (telefonun native Android TTS mühərriki ilə, `ar-SA`) səsləndirilməsini eşidə bilərsiniz. Kod hər zaman ərəbcə (`ar-SA`) dilini məcburi tələb edir — əgər telefonda ərəbcə səs paketi quraşdırılmayıbsa, səhv dildə oxumaq əvəzinə sadəcə səssiz qalır.
+  - **Keyfiyyəti artırmaq üçün:** telefonun Ayarlar → Sistem → Dillər və daxiletmə → Mətndən nitqə (Text-to-speech) → Google mühərriki → "Install voice data" bölməsindən **Ərəbcə (العربية)** səsini yükləyin. Bir neçə fərqli keyfiyyət/aksent seçimi ola bilər.
 
-Cari versiya ekranın altında göstərilir (məs. `v1.0.0`). Sistem hələ real istifadəyə verilmədiyi üçün versiya `v1.0.0`-da saxlanılır; rəsmi istifadəyə verildikdən sonra: yeni funksiya əlavə olunanda "Kiçik" rəqəm (`v1.1.0`), xəta düzəlişində "Düzəliş" rəqəmi (`v1.0.1`) artacaq.
+- Bildiriş sistemi native `LocalNotifications` plagini ilə işləyir: gündə bir dəfə, seçilən saatda, **tətbiq tam bağlı olsa belə** Android sistemi tərəfindən göstərilir.
+- Service Worker (`sw.js`) yalnız veb mühitində qeydiyyatdan keçir, native APK-da lazım olmadığı üçün avtomatik keçilir.
+- **💾 Ehtiyat nüsxə (Backup/Bərpa)** — Ayarlar bölməsindən proqresinizi (öyrənilən sözlər, XP, seriya, favoritlər və s.) JSON fayl kimi çıxarıb (Share menyusu ilə Google Drive/Telegram/faylınıza saxlaya bilərsiniz) və lazım olanda geri bərpa edə bilərsiniz. Bu, tətbiqi silsəniz və ya telefon dəyişsəniz məlumatınızın itməməsi üçündür.
+- **Android geri düyməsi düzgün idarə olunur** — istənilən bölmədə geri düyməsi/jesti ana menyuya qaytarır, yalnız ana menyudan basılanda tətbiqi bağlayır (təsadüfən bağlanma olmur).
+- **Splash screen (açılış ekranı)** — tətbiqin öz brend rənglərinə uyğun açılış ekranı, ağ boş ekran yerinə.
+- **✍️ Yazı məşqi** — 28 ərəb əlifbası hərfinin hamısı üçün barmaqla izləyərək (tracing) yazı məşqi, boz hərfin üzərindən keçmək üsulu ilə.
+- **🎤 Tələffüz yoxlaması** — Feillər və Dialoqlar bölmələrində 🎤 ikonuna basıb sözü/cümləni tələffüz edin, Android-in native nitq-tanıma sistemi dediyinizi mətnə çevirib düzgünlüyünü yoxlayır (mikrofon icazəsi tələb olunur).
+- Bütün digər funksiyalar (Feillər, Dialoqlar, Testlər, Flash kartlar, SRS, Statistika, Ayarlar və s.) olduğu kimi qalır — heç nə itməyib.
+
+## Kodu redaktə etmək
+
+Bütün əsas iş `www/` qovluğunda gedir — `app.js`, `verbs.js`, `dialogues.js`, `tests.js`, `index.html`. Dəyişiklik etdikdən sonra:
+
+```bash
+npx cap sync android
+cd android && ./gradlew assembleDebug
+```

@@ -200,7 +200,10 @@ function renderHomeStats() {
             <div class="xp-bar"><div class="xp-bar-fill" style="width:${percent}%"></div></div>
         </div>
         <div class="daily-word-card" onclick="openDailyWord()">
-            <div class="text-white-75" style="font-size: 0.75rem;">📅 Gündəlik söz</div>
+            <div class="flex-between">
+                <div class="text-white-75" style="font-size: 0.75rem;">📅 Gündəlik söz</div>
+                <button class="speak-btn-inline" onclick="event.stopPropagation(); speakArabic('${dw.arabic}')" title="Səsləndir">🔊</button>
+            </div>
             <div class="arabic-text text-2xl">${displayArabic(dw.arabic)}</div>
             <div class="text-white-75">${dw.meaning}</div>
         </div>
@@ -268,6 +271,7 @@ function showSettingsSection() {
             </div>
             ${renderSettingsCardHtml()}
             ${renderNotificationCardHtml()}
+            ${renderBackupCardHtml()}
         </div>
     `;
 }
@@ -405,7 +409,7 @@ function setHideHarakat(value) {
 
 function toggleHideHarakatSetting(checkbox) {
     setHideHarakat(checkbox.checked);
-    // Açıq olan Ayarlar ekranını təzələmək üçün
+    // Açıq olan istənilən ekranı təzələmək üçün ən sadə yol: statistika ekranını yenidən çək
     showSettingsSection();
 }
 
@@ -472,7 +476,10 @@ function showVerbsSection(index) {
         formsHtml += `
             <div class="flex-between border-b py-2 clickable" onclick="openFormExamples(${verb.id}, '${key}')">
                 <span class="text-white-75">${label}</span>
-                <span class="arabic-text font-bold">${displayArabic(verb.forms[key].arabic)}</span>
+                <span style="display:flex; align-items:center; gap:6px;">
+                    <button class="speak-btn-inline" onclick="speakArabicFromEvent(event, '${verb.forms[key].arabic}')" title="Səsləndir">🔊</button>
+                    <span class="arabic-text font-bold">${displayArabic(verb.forms[key].arabic)}</span>
+                </span>
                 <span class="text-white-75" style="font-size: 0.875rem;">${verb.forms[key].translation}</span>
             </div>
         `;
@@ -493,8 +500,13 @@ function showVerbsSection(index) {
             </div>
             <div class="progress-text">${currentVerbIndex + 1} / ${verbsData.length}</div>
             <div class="text-center mb-4">
-                <p class="arabic-text text-4xl font-bold mb-2">${displayArabic(verb.arabic)}</p>
+                <div style="display:flex; align-items:center; justify-content:center; gap:10px;">
+                    <p class="arabic-text text-4xl font-bold mb-2">${displayArabic(verb.arabic)}</p>
+                    <button class="speak-btn" onclick="speakArabicFromEvent(event, '${verb.arabic}')" title="Səsləndir">🔊</button>
+                    <button class="speak-btn" onclick="checkPronunciation('${verb.arabic}', 'pronun-feedback-verb', event)" title="Tələffüzünü yoxla">🎤</button>
+                </div>
                 <p class="text-white-75 text-lg">${verb.meaning}</p>
+                <div id="pronun-feedback-verb" class="feedback"></div>
             </div>
             <div class="mb-4">
                 <h3 class="font-semibold mb-2">Formalar</h3>
@@ -585,7 +597,10 @@ function openFormExamples(verbId, formKey) {
     formData.examples.forEach(ex => {
         examplesHtml += `
             <div class="rounded-xl mb-2" style="background: rgba(255,255,255,0.05); padding: 12px;">
-                <p class="arabic-text mb-1">${displayArabic(ex.arabic)}</p>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <button class="speak-btn-inline" onclick="speakArabicFromEvent(event, '${ex.arabic}')" title="Səsləndir">🔊</button>
+                    <p class="arabic-text mb-1" style="flex:1;">${displayArabic(ex.arabic)}</p>
+                </div>
                 <p class="text-white-75" style="font-size: 0.875rem; direction: ltr; text-align: left;">${ex.translation}</p>
             </div>
         `;
@@ -598,7 +613,10 @@ function openFormExamples(verbId, formKey) {
                 <button onclick="showVerbsSection(${currentVerbIndex})" class="close-btn">✕</button>
             </div>
             <div class="text-center mb-4">
-                <p class="arabic-text text-3xl font-bold">${displayArabic(formData.arabic)}</p>
+                <div style="display:flex; align-items:center; justify-content:center; gap:10px;">
+                    <p class="arabic-text text-3xl font-bold">${displayArabic(formData.arabic)}</p>
+                    <button class="speak-btn" onclick="speakArabicFromEvent(event, '${formData.arabic}')" title="Səsləndir">🔊</button>
+                </div>
                 <p class="text-white-75">${verb.meaning} (${formData.translation})</p>
             </div>
             ${examplesHtml}
@@ -648,11 +666,17 @@ function showDialoguesSection(index) {
     const isLearned = learnedDialogues.includes(dialogue.id);
 
     let dialogueHtml = '';
-    dialogue.dialogue.forEach((line) => {
+    dialogue.dialogue.forEach((line, lineIdx) => {
+        const feedbackId = `pronun-feedback-d${dialogue.id}-${lineIdx}`;
         dialogueHtml += `
             <div class="rounded-xl mb-2" style="background: rgba(255,255,255,0.05); padding: 12px;">
-                <p class="arabic-text mb-1">${displayArabic(line.arabic)}</p>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <button class="speak-btn-inline" onclick="speakArabicFromEvent(event, '${line.arabic}')" title="Səsləndir">🔊</button>
+                    <button class="speak-btn-inline" onclick="checkPronunciation('${line.arabic}', '${feedbackId}', event)" title="Tələffüzünü yoxla">🎤</button>
+                    <p class="arabic-text mb-1" style="flex:1;">${displayArabic(line.arabic)}</p>
+                </div>
                 <p class="dialogue-translation">${line.translation}</p>
+                <div id="${feedbackId}" class="feedback" style="text-align:left;"></div>
             </div>
         `;
     });
@@ -1289,10 +1313,12 @@ function renderFlashcard() {
                     <div class="flashcard-inner">
                         <div class="flashcard-face flashcard-front">
                             <button class="fav-star-btn" style="position:absolute; top:10px; right:14px;" onclick="event.stopPropagation(); toggleFavoriteAndRerenderFlashcard(${verb.id})">${isFavorite ? '⭐' : '☆'}</button>
+                            <button class="speak-btn" style="position:absolute; top:10px; left:14px;" onclick="event.stopPropagation(); speakArabic('${verb.arabic}')" title="Səsləndir">🔊</button>
                             <p class="arabic-text text-4xl font-bold">${displayArabic(verb.arabic)}</p>
                             <p class="flip-hint">Çevirmək üçün toxunun</p>
                         </div>
                         <div class="flashcard-face flashcard-back">
+                            <button class="speak-btn" style="position:absolute; top:10px; left:14px;" onclick="event.stopPropagation(); speakArabic('${verb.forms.past.arabic}')" title="Səsləndir">🔊</button>
                             <p class="text-2xl font-bold mb-2">${verb.meaning}</p>
                             <p class="text-white-75" style="font-size: 0.85rem;">${displayArabic(verb.forms.past.arabic)} — ${verb.forms.past.translation}</p>
                             <p class="flip-hint">Geri qayıtmaq üçün toxunun</p>
@@ -1359,15 +1385,456 @@ function saveNotificationSettings() {
     localStorage.setItem('notificationSettings', JSON.stringify(notificationSettings));
 }
 
+function isCapacitorApp() {
+    return typeof window !== 'undefined' &&
+        window.Capacitor &&
+        typeof window.Capacitor.isNativePlatform === 'function' &&
+        window.Capacitor.isNativePlatform();
+}
+
+function getLocalNotificationsPlugin() {
+    if (!isCapacitorApp()) return null;
+    return (window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) || null;
+}
+
+// ==================== SƏSLƏNDİRMƏ (TEXT-TO-SPEECH) ====================
+// ==================== EHTİYAT NÜSXƏ (BACKUP / BƏRPA) ====================
+function buildBackupObject() {
+    return {
+        app: 'hergun-erebce',
+        appVersion: APP_VERSION,
+        exportedAt: new Date().toISOString(),
+        data: {
+            learnedVerbs, learnedDialogues, answeredQuestions, favoriteVerbs,
+            xp, earnedBadges, testStats, streakData,
+            difficultVerbs, difficultQuestions, srsData, dailyXpLog, dailyGoalXp,
+            hideHarakat, arabicFontScale,
+            theme: localStorage.getItem('theme') || 'dark'
+        }
+    };
+}
+
+async function exportBackup() {
+    const jsonStr = JSON.stringify(buildBackupObject(), null, 2);
+    const filename = `hergun-erebce-backup-${todayStr()}.json`;
+
+    const capFS = isCapacitorApp() && window.Capacitor.Plugins.Filesystem;
+    const capShare = isCapacitorApp() && window.Capacitor.Plugins.Share;
+
+    if (capFS) {
+        try {
+            const result = await capFS.writeFile({
+                path: filename,
+                data: jsonStr,
+                directory: 'CACHE',
+                encoding: 'utf8'
+            });
+            if (capShare && capShare.share) {
+                await capShare.share({ title: 'Hər Gün Ərəbcə - Ehtiyat nüsxə', url: result.uri });
+            } else {
+                alert('Ehtiyat nüsxə yaradıldı: ' + result.uri);
+            }
+        } catch (e) {
+            alert('Ehtiyat nüsxə yaradıla bilmədi: ' + (e && e.message ? e.message : e));
+        }
+        return;
+    }
+
+    // Veb fallback: brauzer vasitəsilə fayl yükləmək
+    try {
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        alert('Ehtiyat nüsxə yaradıla bilmədi.');
+    }
+}
+
+function triggerImportPicker() {
+    const input = document.getElementById('backup-file-input');
+    if (input) input.click();
+}
+
+function handleBackupFileSelected(input) {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const parsed = JSON.parse(e.target.result);
+            applyBackupData(parsed);
+        } catch (err) {
+            alert('Fayl oxuna bilmədi — düzgün ehtiyat nüsxə faylı deyil.');
+        }
+    };
+    reader.readAsText(file);
+    input.value = '';
+}
+
+function applyBackupData(parsed) {
+    if (!parsed || !parsed.data) {
+        alert('Fayl formatı tanınmadı.');
+        return;
+    }
+    const confirmed = confirm('Bu, cari proqresinizi ehtiyat nüsxədəki ilə əvəz edəcək. Davam edilsin?');
+    if (!confirmed) return;
+
+    const d = parsed.data;
+    learnedVerbs = d.learnedVerbs || [];
+    learnedDialogues = d.learnedDialogues || [];
+    answeredQuestions = d.answeredQuestions || [];
+    favoriteVerbs = d.favoriteVerbs || [];
+    xp = d.xp || 0;
+    earnedBadges = d.earnedBadges || [];
+    testStats = d.testStats || { attempts: 0, correct: 0 };
+    streakData = d.streakData || { lastActiveDate: null, currentStreak: 0, longestStreak: 0 };
+    difficultVerbs = d.difficultVerbs || [];
+    difficultQuestions = d.difficultQuestions || [];
+    srsData = d.srsData || {};
+    dailyXpLog = d.dailyXpLog || {};
+    dailyGoalXp = d.dailyGoalXp || 50;
+    hideHarakat = !!d.hideHarakat;
+    arabicFontScale = d.arabicFontScale || 1;
+
+    saveLearnedVerbs();
+    saveLearnedDialogues();
+    saveAnsweredQuestions();
+    saveFavoriteVerbs();
+    localStorage.setItem('xp', String(xp));
+    localStorage.setItem('earnedBadges', JSON.stringify(earnedBadges));
+    localStorage.setItem('testStats', JSON.stringify(testStats));
+    localStorage.setItem('streakData', JSON.stringify(streakData));
+    saveDifficultVerbs();
+    saveDifficultQuestions();
+    localStorage.setItem('srsData', JSON.stringify(srsData));
+    localStorage.setItem('dailyXpLog', JSON.stringify(dailyXpLog));
+    localStorage.setItem('dailyGoalXp', String(dailyGoalXp));
+    localStorage.setItem('hideHarakat', String(hideHarakat));
+    localStorage.setItem('arabicFontScale', String(arabicFontScale));
+    if (d.theme) {
+        localStorage.setItem('theme', d.theme);
+        applyTheme(d.theme);
+    }
+    applyArabicFontScale();
+
+    alert('Ehtiyat nüsxə uğurla bərpa edildi!');
+    showMainMenu();
+}
+
+function renderBackupCardHtml() {
+    return `
+        <div class="notif-card">
+            <h3 class="font-semibold mb-2">💾 Ehtiyat nüsxə</h3>
+            <p class="notif-status mb-3">Proqresiniz (öyrənilən sözlər, XP, seriya, favoritlər) yalnız bu telefonda saxlanılır. Tətbiqi silsəniz və ya telefon dəyişsəniz itməməsi üçün ehtiyat nüsxə çıxarın.</p>
+            <button class="glass-button mb-2" onclick="exportBackup()">⬆️ Ehtiyat nüsxə çıxar</button>
+            <button class="glass-button" onclick="triggerImportPicker()">⬇️ Nüsxədən bərpa et</button>
+            <input type="file" id="backup-file-input" accept="application/json" style="display:none" onchange="handleBackupFileSelected(this)">
+        </div>
+    `;
+}
+
+// ==================== ANDROID GERİ DÜYMƏSİ ====================
+// ==================== YAZI MƏŞQİ (ƏRƏB ƏLİFBASI) ====================
+const ARABIC_LETTERS = [
+    { letter: 'ا', name: 'əlif' }, { letter: 'ب', name: 'ba' }, { letter: 'ت', name: 'ta' },
+    { letter: 'ث', name: 'sa' }, { letter: 'ج', name: 'cim' }, { letter: 'ح', name: 'ha (h)' },
+    { letter: 'خ', name: 'xa' }, { letter: 'د', name: 'dal' }, { letter: 'ذ', name: 'zal' },
+    { letter: 'ر', name: 'ra' }, { letter: 'ز', name: 'zay' }, { letter: 'س', name: 'sin' },
+    { letter: 'ش', name: 'şin' }, { letter: 'ص', name: 'sad' }, { letter: 'ض', name: 'dad' },
+    { letter: 'ط', name: 'ta (tı)' }, { letter: 'ظ', name: 'za (zı)' }, { letter: 'ع', name: 'ayn' },
+    { letter: 'غ', name: 'ğayn' }, { letter: 'ف', name: 'fa' }, { letter: 'ق', name: 'qaf' },
+    { letter: 'ك', name: 'kaf' }, { letter: 'ل', name: 'lam' }, { letter: 'م', name: 'mim' },
+    { letter: 'ن', name: 'nun' }, { letter: 'ه', name: 'ha' }, { letter: 'و', name: 'vav' },
+    { letter: 'ي', name: 'ya' }
+];
+
+let currentLetterIndex = 0;
+let isDrawingOnCanvas = false;
+let lastDrawPoint = null;
+
+function showWritingSection(index) {
+    index = clampIndex(index === undefined ? currentLetterIndex : index, ARABIC_LETTERS.length);
+    currentLetterIndex = index;
+    const item = ARABIC_LETTERS[index];
+    const content = document.getElementById('content-area');
+    content.style.display = 'block';
+    document.getElementById('main-menu').style.display = 'none';
+
+    content.innerHTML = `
+        <div class="glass-card fade-in">
+            <div class="flex-between mb-2">
+                <h2 class="text-xl font-bold">✍️ Yazı məşqi</h2>
+                <button onclick="showMainMenu()" class="close-btn">✕</button>
+            </div>
+            <div class="progress-text">${index + 1} / ${ARABIC_LETTERS.length} — ${item.name}</div>
+            <p class="text-center text-white-75 mb-2" style="font-size: 0.8rem;">Boz hərfin üzərindən barmağınızla keçin</p>
+            <div class="writing-canvas-wrap">
+                <canvas id="writing-canvas" width="300" height="300"></canvas>
+            </div>
+            <button class="glass-button mb-3" onclick="clearWritingCanvas()">🧹 Təmizlə</button>
+            <div class="nav-row">
+                <button class="glass-button" onclick="navigateWriting(-1)" ${index === 0 ? 'disabled' : ''}>◀ Əvvəlki</button>
+                <button class="glass-button" onclick="navigateWriting(1)" ${index === ARABIC_LETTERS.length - 1 ? 'disabled' : ''}>Növbəti ▶</button>
+            </div>
+        </div>
+    `;
+
+    setupWritingCanvas(item.letter);
+}
+
+function navigateWriting(delta) {
+    showWritingSection(currentLetterIndex + delta);
+}
+
+function drawGuideLetter(letter) {
+    const canvas = document.getElementById('writing-canvas');
+    if (!canvas || !canvas.getContext) return;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.direction = 'rtl';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '200px "Traditional Arabic", "Scheherazade New", "Amiri", serif';
+    ctx.fillStyle = 'rgba(150,150,150,0.4)';
+    ctx.fillText(letter, canvas.width / 2, canvas.height / 2 + 10);
+    ctx.restore();
+}
+
+function clearWritingCanvas() {
+    const item = ARABIC_LETTERS[currentLetterIndex];
+    drawGuideLetter(item.letter);
+}
+
+function setupWritingCanvas(letter) {
+    const canvas = document.getElementById('writing-canvas');
+    if (!canvas || !canvas.getContext) return;
+    const ctx = canvas.getContext('2d');
+    drawGuideLetter(letter);
+
+    const getPos = (evt) => {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+        const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+        return {
+            x: (clientX - rect.left) * (canvas.width / rect.width),
+            y: (clientY - rect.top) * (canvas.height / rect.height)
+        };
+    };
+
+    const start = (evt) => {
+        evt.preventDefault();
+        isDrawingOnCanvas = true;
+        lastDrawPoint = getPos(evt);
+    };
+    const move = (evt) => {
+        if (!isDrawingOnCanvas) return;
+        evt.preventDefault();
+        const pos = getPos(evt);
+        ctx.strokeStyle = '#4ade80';
+        ctx.lineWidth = 6;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(lastDrawPoint.x, lastDrawPoint.y);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+        lastDrawPoint = pos;
+    };
+    const end = () => { isDrawingOnCanvas = false; lastDrawPoint = null; };
+
+    canvas.onmousedown = start;
+    canvas.onmousemove = move;
+    canvas.onmouseup = end;
+    canvas.onmouseleave = end;
+    canvas.ontouchstart = start;
+    canvas.ontouchmove = move;
+    canvas.ontouchend = end;
+}
+
+function initNativeBackButton() {
+    if (!isCapacitorApp()) return;
+    const CapApp = window.Capacitor.Plugins.App;
+    if (!CapApp || !CapApp.addListener) return;
+    CapApp.addListener('backButton', () => {
+        const mainMenu = document.getElementById('main-menu');
+        const isOnMainMenu = mainMenu && mainMenu.style.display !== 'none';
+        if (isOnMainMenu) {
+            CapApp.exitApp();
+        } else {
+            showMainMenu();
+        }
+    });
+}
+
+function getSplashScreenPlugin() {
+    if (!isCapacitorApp()) return null;
+    return (window.Capacitor.Plugins && window.Capacitor.Plugins.SplashScreen) || null;
+}
+
+function hideSplashScreen() {
+    const plugin = getSplashScreenPlugin();
+    if (plugin && plugin.hide) {
+        plugin.hide().catch(() => {});
+    }
+}
+
+
+// ==================== SƏSLƏNDİRMƏ (TEXT-TO-SPEECH) ====================
+function getTextToSpeechPlugin() {
+    if (!isCapacitorApp()) return null;
+    return (window.Capacitor.Plugins && window.Capacitor.Plugins.TextToSpeech) || null;
+}
+
+function pickArabicWebVoice() {
+    if (typeof speechSynthesis === 'undefined') return null;
+    const voices = speechSynthesis.getVoices() || [];
+    // Yalnız "ar" ilə başlayan (ərəbcə) səsləri qəbul et — başqa dilin səsi ilə oxumasın
+    return voices.find(v => /^ar([-_]|$)/i.test(v.lang)) || null;
+}
+
+// text: mütləq hərəkəli (harakatlı) orijinal mətn ötürülməlidir — displayArabic() ilə
+// hərəkəsi silinmiş versiya YOX, çünki hərəkələr düzgün tələffüz üçün TTS-ə lazımdır.
+async function speakArabic(text) {
+    if (!text) return;
+
+    const nativePlugin = getTextToSpeechPlugin();
+    if (nativePlugin) {
+        try {
+            await nativePlugin.speak({
+                text: text,
+                lang: 'ar-SA',
+                rate: 0.85,
+                pitch: 1.0,
+                volume: 1.0,
+                category: 'ambient'
+            });
+        } catch (e) {
+            // Native TTS mövcud deyil və ya ərəbcə səs paketi quraşdırılmayıb
+        }
+        return;
+    }
+
+    // Brauzer/PWA fallback (yalnız test məqsədilə, real APK-da yuxarıdakı yol işləyir)
+    if (typeof speechSynthesis !== 'undefined') {
+        try {
+            speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ar-SA';
+            const arVoice = pickArabicWebVoice();
+            if (arVoice) {
+                utterance.voice = arVoice;
+            } else {
+                // Ərəbcə səs tapılmadı — səhv dildə oxumaqdansa heç oxumamaq daha yaxşıdır
+                return;
+            }
+            utterance.rate = 0.85;
+            speechSynthesis.speak(utterance);
+        } catch (e) {
+            // -
+        }
+    }
+}
+
+function speakArabicFromEvent(event, text) {
+    if (event) event.stopPropagation();
+    speakArabic(text);
+}
+
+// ==================== TƏLƏFFÜZ YOXLAMASI (MİKROFON) ====================
+function getSpeechRecognitionPlugin() {
+    if (!isCapacitorApp()) return null;
+    return (window.Capacitor.Plugins && window.Capacitor.Plugins.SpeechRecognition) || null;
+}
+
+async function checkPronunciation(targetText, feedbackElId, event) {
+    if (event) event.stopPropagation();
+    const feedbackEl = document.getElementById(feedbackElId);
+    const plugin = getSpeechRecognitionPlugin();
+
+    if (!plugin) {
+        if (feedbackEl) feedbackEl.innerHTML = '<span class="warning">Bu funksiya yalnız quraşdırılmış tətbiqdə (APK) işləyir.</span>';
+        return;
+    }
+
+    try {
+        const availability = await plugin.available();
+        if (!availability || !availability.available) {
+            if (feedbackEl) feedbackEl.innerHTML = '<span class="warning">Bu telefonda nitq tanıma xidməti yoxdur.</span>';
+            return;
+        }
+
+        let permStatus = await plugin.checkPermissions();
+        if (permStatus.speechRecognition !== 'granted') {
+            permStatus = await plugin.requestPermissions();
+        }
+        if (permStatus.speechRecognition !== 'granted') {
+            if (feedbackEl) feedbackEl.innerHTML = '<span class="error">Mikrofon icazəsi verilmədi. Ayarlar → Tətbiqlər → Hər Gün Ərəbcə → İcazələr bölməsindən aça bilərsiniz.</span>';
+            return;
+        }
+
+        if (feedbackEl) feedbackEl.innerHTML = '<span class="warning">🎤 Dinləyir... indi tələffüz edin</span>';
+
+        const result = await plugin.start({
+            language: 'ar-SA',
+            maxResults: 3,
+            partialResults: false,
+            popup: false
+        });
+
+        const matches = (result && result.matches) || [];
+        if (matches.length === 0) {
+            if (feedbackEl) feedbackEl.innerHTML = '<span class="warning">Heç nə eşidilmədi, yenidən cəhd edin.</span>';
+            return;
+        }
+
+        const normalizedTarget = normalizeArabic(targetText);
+        const exactMatch = matches.find(m => normalizeArabic(m) === normalizedTarget);
+
+        if (exactMatch) {
+            if (feedbackEl) feedbackEl.innerHTML = '<span class="success">✅ Əla! Düzgün tələffüz etdiniz.</span>';
+        } else {
+            if (feedbackEl) feedbackEl.innerHTML = `<span class="error">❌ Bir az fərqli səsləndi.</span><div class="correct-answer-box"><span class="text-white-75" style="font-size:0.85rem;">Eşidilən:</span><p class="arabic-text">${matches[0]}</p></div>`;
+        }
+    } catch (e) {
+        if (feedbackEl) feedbackEl.innerHTML = '<span class="error">Xəta baş verdi, yenidən cəhd edin.</span>';
+    }
+}
+
 function getNotificationSupportInfo() {
+    const capacitor = isCapacitorApp();
     const hasNotificationApi = typeof Notification !== 'undefined';
     const hasServiceWorker = typeof navigator !== 'undefined' && 'serviceWorker' in navigator;
-    return { hasNotificationApi, hasServiceWorker };
+    // Capacitor-da real native bildiriş imkanı brauzer API-sindən asılı deyil
+    return { capacitor, hasNotificationApi: capacitor || hasNotificationApi, hasServiceWorker };
 }
 
 async function showLocalNotification(message) {
+    const plugin = getLocalNotificationsPlugin();
+    if (plugin) {
+        try {
+            await plugin.schedule({
+                notifications: [{
+                    id: 999,
+                    title: 'Hər Gün Ərəbcə',
+                    body: message,
+                    schedule: { at: new Date(Date.now() + 1000) }
+                }]
+            });
+        } catch (e) {
+            // native bildiriş göstərilə bilmədi
+        }
+        return;
+    }
+
     const { hasNotificationApi, hasServiceWorker } = getNotificationSupportInfo();
-    if (!hasNotificationApi || Notification.permission !== 'granted') return;
+    if (!hasNotificationApi || typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
     try {
         if (hasServiceWorker) {
             const reg = await navigator.serviceWorker.ready;
@@ -1386,9 +1853,42 @@ async function showLocalNotification(message) {
     }
 }
 
-async function registerPeriodicReminder() {
+// Native (Capacitor) rejimdə hər gün eyni saatda TƏKRARLANAN bildiriş qur —
+// bu, tətbiq tam bağlı olsa belə Android sistemi tərəfindən işə salınır
+async function scheduleNativeDailyReminder() {
+    const plugin = getLocalNotificationsPlugin();
+    if (!plugin) return;
+    const [h, m] = (notificationSettings.time || '19:00').split(':').map(Number);
+    const msg = REMINDER_MESSAGES[Math.floor(Math.random() * REMINDER_MESSAGES.length)];
     try {
-        if (!('serviceWorker' in navigator)) return;
+        await plugin.cancel({ notifications: [{ id: 1 }] });
+        await plugin.schedule({
+            notifications: [{
+                id: 1,
+                title: 'Hər Gün Ərəbcə',
+                body: msg,
+                schedule: { on: { hour: h, minute: m }, repeats: true }
+            }]
+        });
+    } catch (e) {
+        // Planlaşdırma alınmadı
+    }
+}
+
+async function cancelNativeDailyReminder() {
+    const plugin = getLocalNotificationsPlugin();
+    if (!plugin) return;
+    try {
+        await plugin.cancel({ notifications: [{ id: 1 }] });
+    } catch (e) {
+        // -
+    }
+}
+
+async function registerPeriodicReminder() {
+    // Yalnız veb (brauzer/PWA) mühiti üçün — Capacitor-da native planlaşdırma istifadə olunur
+    try {
+        if (isCapacitorApp() || !('serviceWorker' in navigator)) return;
         const reg = await navigator.serviceWorker.ready;
         if (!('periodicSync' in reg)) return;
         const status = await navigator.permissions.query({ name: 'periodic-background-sync' });
@@ -1401,8 +1901,31 @@ async function registerPeriodicReminder() {
 }
 
 async function enableNotifications(time) {
+    const plugin = getLocalNotificationsPlugin();
+
+    if (plugin) {
+        try {
+            const result = await plugin.requestPermissions();
+            const granted = result && result.display === 'granted';
+            notificationSettings.enabled = granted;
+            notificationSettings.nativePermissionGranted = granted;
+            if (granted) {
+                notificationSettings.time = time || notificationSettings.time;
+                saveNotificationSettings();
+                await scheduleNativeDailyReminder();
+            } else {
+                saveNotificationSettings();
+            }
+        } catch (e) {
+            notificationSettings.enabled = false;
+            saveNotificationSettings();
+        }
+        showSettingsSection();
+        return;
+    }
+
     const { hasNotificationApi } = getNotificationSupportInfo();
-    if (!hasNotificationApi) {
+    if (!hasNotificationApi || typeof Notification === 'undefined') {
         notificationSettings.enabled = false;
         saveNotificationSettings();
         showSettingsSection();
@@ -1427,6 +1950,7 @@ async function enableNotifications(time) {
 function disableNotifications() {
     notificationSettings.enabled = false;
     saveNotificationSettings();
+    cancelNativeDailyReminder();
     showSettingsSection();
 }
 
@@ -1445,13 +1969,21 @@ function saveNotificationTime() {
     if (!timeInput) return;
     notificationSettings.time = timeInput.value;
     saveNotificationSettings();
+    if (notificationSettings.enabled) {
+        scheduleNativeDailyReminder();
+    }
     showSettingsSection();
 }
 
 function sendTestNotification() {
+    const plugin = getLocalNotificationsPlugin();
+    if (plugin) {
+        showLocalNotification('Bu bir sınaq bildirişidir 👋');
+        return;
+    }
     const { hasNotificationApi } = getNotificationSupportInfo();
-    if (!hasNotificationApi) {
-        alert('Bu brauzer bildirişləri dəstəkləmir.');
+    if (!hasNotificationApi || typeof Notification === 'undefined') {
+        alert('Bu mühit bildirişləri dəstəkləmir.');
         return;
     }
     if (Notification.permission === 'granted') {
@@ -1462,8 +1994,11 @@ function sendTestNotification() {
 }
 
 function maybeShowDailyReminder() {
+    // Capacitor-da bildiriş artıq native sistem tərəfindən planlaşdırılıb, bura ehtiyac yoxdur
+    if (isCapacitorApp()) return;
+
     const { hasNotificationApi } = getNotificationSupportInfo();
-    if (!hasNotificationApi || !notificationSettings.enabled) return;
+    if (!hasNotificationApi || typeof Notification === 'undefined' || !notificationSettings.enabled) return;
     if (Notification.permission !== 'granted') return;
 
     const now = new Date();
@@ -1481,6 +2016,7 @@ function maybeShowDailyReminder() {
         saveNotificationSettings();
     }
 }
+
 
 function renderSettingsCardHtml() {
     const percentLabel = Math.round(arabicFontScale * 100) + '%';
@@ -1506,17 +2042,28 @@ function renderSettingsCardHtml() {
 }
 
 function renderNotificationCardHtml() {
-    const { hasNotificationApi } = getNotificationSupportInfo();
-    const permission = hasNotificationApi ? Notification.permission : 'unsupported';
+    const { capacitor, hasNotificationApi } = getNotificationSupportInfo();
+    let permission;
+    if (capacitor) {
+        permission = notificationSettings.nativePermissionGranted ? 'granted'
+            : (notificationSettings.nativePermissionGranted === false ? 'denied' : 'default');
+    } else {
+        permission = hasNotificationApi && typeof Notification !== 'undefined' ? Notification.permission : 'unsupported';
+    }
     const checked = notificationSettings.enabled && permission === 'granted' ? 'checked' : '';
+    const isDisabled = !hasNotificationApi || permission === 'denied';
 
     let statusText = '';
     if (!hasNotificationApi) {
-        statusText = 'Bu brauzer bildirişləri dəstəkləmir.';
+        statusText = 'Bu mühit bildirişləri dəstəkləmir.';
     } else if (permission === 'denied') {
-        statusText = 'Bildirişlərə icazə verilməyib. Brauzer ayarlarından sayt icazələrini dəyişməlisiniz.';
+        statusText = capacitor
+            ? 'Bildirişlərə icazə verilməyib. Telefonun Ayarlar → Tətbiqlər → Hər Gün Ərəbcə → Bildirişlər bölməsindən icazəni aça bilərsiniz.'
+            : 'Bildirişlərə icazə verilməyib. Brauzer ayarlarından sayt icazələrini dəyişməlisiniz.';
     } else if (notificationSettings.enabled) {
-        statusText = `Hər gün ~${notificationSettings.time} vaxtı xatırlatma göndəriləcək (tətbiq açıq və ya bəzi telefonlarda arxa fonda olduqda). Zəmanətli deyil, brauzer dəstəyindən asılıdır.`;
+        statusText = capacitor
+            ? `Hər gün ${notificationSettings.time} vaxtı Android sistemi tərəfindən etibarlı bildiriş göndəriləcək (tətbiq bağlı olsa belə).`
+            : `Hər gün ~${notificationSettings.time} vaxtı xatırlatma göndəriləcək (tətbiq açıq və ya bəzi telefonlarda arxa fonda olduqda). Zəmanətli deyil, brauzer dəstəyindən asılıdır.`;
     } else {
         statusText = 'Xatırlatmaları aktiv etmək üçün düyməni açın.';
     }
@@ -1527,16 +2074,16 @@ function renderNotificationCardHtml() {
             <div class="notif-row">
                 <span class="text-white-75">Bildirişlər</span>
                 <label class="switch">
-                    <input type="checkbox" ${checked} ${!hasNotificationApi || permission === 'denied' ? 'disabled' : ''} onchange="onNotificationToggle(this)">
+                    <input type="checkbox" ${checked} ${isDisabled ? 'disabled' : ''} onchange="onNotificationToggle(this)">
                     <span class="slider-toggle"></span>
                 </label>
             </div>
             <div class="notif-row">
                 <span class="text-white-75">Xatırlatma vaxtı</span>
-                <input type="time" id="notif-time-input" class="notif-time-input" value="${notificationSettings.time}" onchange="saveNotificationTime()" ${!hasNotificationApi || permission === 'denied' ? 'disabled' : ''}>
+                <input type="time" id="notif-time-input" class="notif-time-input" value="${notificationSettings.time}" onchange="saveNotificationTime()" ${isDisabled ? 'disabled' : ''}>
             </div>
             <p class="notif-status">${statusText}</p>
-            <button class="glass-button notif-test-btn" onclick="sendTestNotification()" ${!hasNotificationApi || permission === 'denied' ? 'disabled' : ''}>Sınaq bildirişi göndər</button>
+            <button class="glass-button notif-test-btn" onclick="sendTestNotification()" ${isDisabled ? 'disabled' : ''}>Sınaq bildirişi göndər</button>
         </div>
     `;
 }
@@ -1546,6 +2093,7 @@ document.getElementById('btn-verbs').addEventListener('click', () => showVerbsSe
 document.getElementById('btn-dialogues').addEventListener('click', () => showDialoguesSection());
 document.getElementById('btn-tests').addEventListener('click', () => showTestModeSelect());
 document.getElementById('btn-flashcards').addEventListener('click', () => showFlashcardModeSelect());
+document.getElementById('btn-writing').addEventListener('click', () => showWritingSection(0));
 document.getElementById('btn-stats').addEventListener('click', () => showStatsSection());
 document.getElementById('theme-toggle-btn').addEventListener('click', () => toggleTheme());
 document.getElementById('settings-toggle-btn').addEventListener('click', () => showSettingsSection());
@@ -1557,9 +2105,11 @@ initVersionTag();
 updateStreakOnVisit();
 checkBadges();
 showMainMenu();
+initNativeBackButton();
+hideSplashScreen();
 
-// Offline istifadə üçün Service Worker qeydiyyatı (PWA)
-if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+// Offline istifadə üçün Service Worker qeydiyyatı (yalnız veb/PWA mühitində — native Capacitor tətbiqinə lazım deyil)
+if (!isCapacitorApp() && typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').catch(() => {
             // Qeydiyyat alınmasa (məs. fayl protokolu ilə açılıbsa) tətbiq normal işləməyə davam edir
@@ -1567,12 +2117,19 @@ if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
     });
 }
 
-// Günlük bildiriş: yüklənəndə yoxla, tətbiq açıq qalarsa hər dəqiqə yenidən yoxla,
-// aktivdirsə arxa fon sinxronizasiyasını (dəstəklənən brauzerlərdə) qeydə al
-maybeShowDailyReminder();
-if (typeof window !== 'undefined' && window.setInterval) {
-    window.setInterval(maybeShowDailyReminder, 60000);
-}
-if (notificationSettings.enabled) {
-    registerPeriodicReminder();
+// Günlük bildiriş:
+// - Capacitor (native APK): aktivdirsə, planı Android sisteminə yenidən tanıdırıq (məs. tətbiq yenilənəndən sonra)
+// - Veb/PWA: yüklənəndə yoxla, açıq qalarsa hər dəqiqə yenidən yoxla, arxa fon sinxronizasiyasını qeydə al
+if (isCapacitorApp()) {
+    if (notificationSettings.enabled) {
+        scheduleNativeDailyReminder();
+    }
+} else {
+    maybeShowDailyReminder();
+    if (typeof window !== 'undefined' && window.setInterval) {
+        window.setInterval(maybeShowDailyReminder, 60000);
+    }
+    if (notificationSettings.enabled) {
+        registerPeriodicReminder();
+    }
 }

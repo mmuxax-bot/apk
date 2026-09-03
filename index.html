@@ -331,6 +331,18 @@
         .accent-teal:hover { background: rgba(20,184,166,0.32); }
         .accent-pink { background: rgba(236,72,153,0.22); border: 1px solid rgba(244,114,182,0.55); }
         .accent-pink:hover { background: rgba(236,72,153,0.32); }
+        .accent-yellow { background: rgba(250,204,21,0.22); border: 1px solid rgba(250,204,21,0.55); }
+        .accent-yellow:hover { background: rgba(250,204,21,0.32); }
+        .writing-canvas-wrap { display: flex; justify-content: center; margin-bottom: 14px; }
+        #writing-canvas {
+            width: 100%;
+            max-width: 320px;
+            aspect-ratio: 1 / 1;
+            background: var(--overlay-08);
+            border: 1px solid var(--overlay-20);
+            border-radius: 18px;
+            touch-action: none;
+        }
         .option-label.selected { background: rgba(59,130,246,0.28); border: 1px solid rgba(96,165,250,0.7); }
         .option-label.correct-choice { background: rgba(74,222,128,0.25); border: 1px solid rgba(74,222,128,0.7); }
         .option-label.wrong-choice { background: rgba(248,113,113,0.25); border: 1px solid rgba(248,113,113,0.7); }
@@ -413,6 +425,30 @@
             cursor: pointer;
             line-height: 1;
         }
+        .speak-btn {
+            background: var(--overlay-15);
+            border: 1px solid var(--overlay-25);
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            font-size: 1rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: var(--text-color);
+        }
+        .speak-btn:active { transform: scale(0.92); }
+        .speak-btn-inline {
+            background: none;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            line-height: 1;
+            padding: 4px;
+            flex-shrink: 0;
+        }
         .know-row { display: flex; gap: 10px; margin-top: 14px; }
         .know-row button { flex: 1; }
         .btn-know { background: rgba(74,222,128,0.22); border: 1px solid rgba(74,222,128,0.55); }
@@ -474,6 +510,7 @@
                 <button id="btn-dialogues" class="glass-button accent-purple">💬 Dialoqlar</button>
                 <button id="btn-tests" class="glass-button accent-orange">📝 Testlər</button>
                 <button id="btn-flashcards" class="glass-button accent-pink">🃏 Flash kartlar</button>
+                <button id="btn-writing" class="glass-button accent-yellow">✍️ Yazı məşqi</button>
                 <button id="btn-stats" class="glass-button accent-teal">📊 Statistika</button>
             </div>
             <div class="text-center mt-4 text-white-50" style="font-size: 0.75rem;">
