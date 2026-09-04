@@ -6,6 +6,8 @@ let learnedVerbs = JSON.parse(localStorage.getItem('learnedVerbs') || '[]');
 let learnedDialogues = JSON.parse(localStorage.getItem('learnedDialogues') || '[]');
 let answeredQuestions = JSON.parse(localStorage.getItem('answeredQuestions') || '[]');
 let favoriteVerbs = JSON.parse(localStorage.getItem('favoriteVerbs') || '[]');
+let learnedWords = JSON.parse(localStorage.getItem('learnedWords') || '[]');
+let favoriteWords = JSON.parse(localStorage.getItem('favoriteWords') || '[]');
 let notificationSettings = JSON.parse(localStorage.getItem('notificationSettings') || '{"enabled":false,"time":"19:00","lastNotifiedDate":null}');
 let hideHarakat = localStorage.getItem('hideHarakat') === 'true';
 let arabicFontScale = parseFloat(localStorage.getItem('arabicFontScale') || '1');
@@ -444,6 +446,229 @@ function showMainMenu() {
 }
 
 // Feillər bölməsi
+// ==================== SÖZ ÖYRƏNMƏYƏ BAŞLA (Feillər / Sözlər / Qarışıq) ====================
+function showVocabModeSelect() {
+    const content = document.getElementById('content-area');
+    content.style.display = 'block';
+    document.getElementById('main-menu').style.display = 'none';
+    content.innerHTML = `
+        <div class="glass-card fade-in">
+            <div class="flex-between mb-4">
+                <h2 class="text-2xl font-bold">📚 Söz öyrənməyə başla</h2>
+                <button onclick="showMainMenu()" class="close-btn">✕</button>
+            </div>
+            <div class="mode-select-card" onclick="showVerbsSection()">
+                <div class="mode-select-icon">🔤</div>
+                <div>
+                    <div class="mode-select-title">Feillər</div>
+                    <div class="mode-select-desc">${verbsData.length} fel</div>
+                </div>
+            </div>
+            <div class="mode-select-card" onclick="showWordsSection()">
+                <div class="mode-select-icon">🧩</div>
+                <div>
+                    <div class="mode-select-title">Sözlər</div>
+                    <div class="mode-select-desc">${wordsData.length} söz (isim, sifət və s.)</div>
+                </div>
+            </div>
+            <div class="mode-select-card" onclick="showMixedSection()">
+                <div class="mode-select-icon">🔀</div>
+                <div>
+                    <div class="mode-select-title">Qarışıq</div>
+                    <div class="mode-select-desc">Feillər və sözlərin hər ikisi (${verbsData.length + wordsData.length})</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function saveLearnedWords() { localStorage.setItem('learnedWords', JSON.stringify(learnedWords)); }
+function saveFavoriteWords() { localStorage.setItem('favoriteWords', JSON.stringify(favoriteWords)); }
+function toggleWordFavorite(id) {
+    if (favoriteWords.includes(id)) favoriteWords = favoriteWords.filter(x => x !== id);
+    else favoriteWords.push(id);
+    saveFavoriteWords();
+}
+
+let currentWordIndex = 0;
+
+function showWordsSection(index) {
+    const content = document.getElementById('content-area');
+    content.style.display = 'block';
+    document.getElementById('main-menu').style.display = 'none';
+
+    if (index === undefined) {
+        const nextUnlearned = wordsData.find(w => !learnedWords.includes(w.id));
+        index = nextUnlearned ? wordsData.findIndex(w => w.id === nextUnlearned.id) : currentWordIndex;
+        if (!nextUnlearned && learnedWords.length >= wordsData.length) {
+            content.innerHTML = `
+                <div class="glass-card text-center">
+                    <p style="font-size: 2rem; margin-bottom: 16px;">🎉</p>
+                    <h2 class="text-xl font-bold mb-2">Bütün sözləri öyrəndiniz!</h2>
+                    <button onclick="showVocabModeSelect()" class="glass-button px-6 py-3">Geri</button>
+                </div>
+            `;
+            return;
+        }
+    }
+    index = clampIndex(index, wordsData.length);
+    currentWordIndex = index;
+    const word = wordsData[currentWordIndex];
+    const isLearned = learnedWords.includes(word.id);
+    const isFavorite = favoriteWords.includes(word.id);
+
+    content.innerHTML = `
+        <div class="glass-card fade-in">
+            <div class="flex-between mb-4">
+                <h2 class="text-2xl font-bold">Söz öyrən</h2>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <button onclick="toggleWordFavoriteAndRerender(${word.id})" class="fav-star-btn" title="Favoritə əlavə et">${isFavorite ? '⭐' : '☆'}</button>
+                    <button onclick="showMainMenu()" class="close-btn">✕</button>
+                </div>
+            </div>
+            <div class="progress-text">${currentWordIndex + 1} / ${wordsData.length}</div>
+            <div class="text-center mb-4">
+                <div style="display:flex; align-items:center; justify-content:center; gap:10px;">
+                    <p class="arabic-text text-4xl font-bold mb-2">${displayArabic(word.arabic)}</p>
+                    <button class="speak-btn" onclick="speakArabicFromEvent(event, '${word.arabic}')" title="Səsləndir">🔊</button>
+                    <button class="speak-btn" onclick="checkPronunciation('${word.arabic}', 'pronun-feedback-word', event)" title="Tələffüzünü yoxla">🎤</button>
+                </div>
+                <p class="text-white-75 text-lg">${word.meaning}</p>
+                <div id="pronun-feedback-word" class="feedback"></div>
+            </div>
+            <button onclick="markWordLearned(${word.id})" class="glass-button py-3 font-bold text-lg">
+                ${isLearned ? '✓ Öyrənilib' : '✓ Öyrəndim'}
+            </button>
+            <div class="nav-row">
+                <button onclick="navigateWord(-1)" class="glass-button" ${currentWordIndex === 0 ? 'disabled' : ''}>◀ Əvvəlki</button>
+                <button onclick="navigateWord(1)" class="glass-button" ${currentWordIndex === wordsData.length - 1 ? 'disabled' : ''}>Növbəti ▶</button>
+            </div>
+        </div>
+    `;
+}
+
+function navigateWord(delta) {
+    showWordsSection(currentWordIndex + delta);
+}
+
+function toggleWordFavoriteAndRerender(id) {
+    toggleWordFavorite(id);
+    showWordsSection(currentWordIndex);
+}
+
+function markWordLearned(id) {
+    if (!learnedWords.includes(id)) {
+        learnedWords.push(id);
+        saveLearnedWords();
+        addXp(XP_PER_VERB);
+        checkBadges();
+    }
+    if (currentWordIndex < wordsData.length - 1) {
+        showWordsSection(currentWordIndex + 1);
+    } else {
+        showWordsSection(currentWordIndex);
+    }
+}
+
+// Qarışıq: Feillər + Sözlər birləşdirilmiş siyahı
+let currentMixedIndex = 0;
+function getMixedPool() {
+    return [
+        ...verbsData.map(v => ({ kind: 'verb', item: v })),
+        ...wordsData.map(w => ({ kind: 'word', item: w }))
+    ];
+}
+
+function showMixedSection(index) {
+    const pool = getMixedPool();
+    const content = document.getElementById('content-area');
+    content.style.display = 'block';
+    document.getElementById('main-menu').style.display = 'none';
+
+    index = clampIndex(index === undefined ? currentMixedIndex : index, pool.length);
+    currentMixedIndex = index;
+    const entry = pool[currentMixedIndex];
+    const isVerb = entry.kind === 'verb';
+    const item = entry.item;
+    const isLearned = isVerb ? learnedVerbs.includes(item.id) : learnedWords.includes(item.id);
+    const isFavorite = isVerb ? favoriteVerbs.includes(item.id) : favoriteWords.includes(item.id);
+
+    let formsHtml = '';
+    if (isVerb) {
+        const formLabels = { past: 'Keçmiş', present: 'İndiki', imperative: 'Əmr' };
+        for (const [key, label] of Object.entries(formLabels)) {
+            formsHtml += `
+                <div class="flex-between border-b py-2">
+                    <span class="text-white-75">${label}</span>
+                    <span class="arabic-text font-bold">${displayArabic(item.forms[key].arabic)}</span>
+                    <span class="text-white-75" style="font-size: 0.875rem;">${item.forms[key].translation}</span>
+                </div>
+            `;
+        }
+    }
+
+    content.innerHTML = `
+        <div class="glass-card fade-in">
+            <div class="flex-between mb-4">
+                <h2 class="text-2xl font-bold">Qarışıq — ${isVerb ? 'Fel' : 'Söz'}</h2>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <button onclick="toggleMixedFavorite(${item.id}, '${entry.kind}')" class="fav-star-btn" title="Favoritə əlavə et">${isFavorite ? '⭐' : '☆'}</button>
+                    <button onclick="showMainMenu()" class="close-btn">✕</button>
+                </div>
+            </div>
+            <div class="progress-text">${currentMixedIndex + 1} / ${pool.length}</div>
+            <div class="text-center mb-4">
+                <div style="display:flex; align-items:center; justify-content:center; gap:10px;">
+                    <p class="arabic-text text-4xl font-bold mb-2">${displayArabic(item.arabic)}</p>
+                    <button class="speak-btn" onclick="speakArabicFromEvent(event, '${item.arabic}')" title="Səsləndir">🔊</button>
+                </div>
+                <p class="text-white-75 text-lg">${item.meaning}</p>
+            </div>
+            ${isVerb ? `<div class="mb-4"><h3 class="font-semibold mb-2">Formalar</h3><div>${formsHtml}</div></div>` : ''}
+            <button onclick="markMixedLearned(${item.id}, '${entry.kind}')" class="glass-button py-3 font-bold text-lg">
+                ${isLearned ? '✓ Öyrənilib' : '✓ Öyrəndim'}
+            </button>
+            <div class="nav-row">
+                <button onclick="navigateMixed(-1)" class="glass-button" ${currentMixedIndex === 0 ? 'disabled' : ''}>◀ Əvvəlki</button>
+                <button onclick="navigateMixed(1)" class="glass-button" ${currentMixedIndex === pool.length - 1 ? 'disabled' : ''}>Növbəti ▶</button>
+            </div>
+        </div>
+    `;
+}
+
+function navigateMixed(delta) {
+    showMixedSection(currentMixedIndex + delta);
+}
+
+function toggleMixedFavorite(id, kind) {
+    if (kind === 'verb') toggleFavorite(id);
+    else toggleWordFavorite(id);
+    showMixedSection(currentMixedIndex);
+}
+
+function markMixedLearned(id, kind) {
+    if (kind === 'verb') {
+        if (!learnedVerbs.includes(id)) {
+            learnedVerbs.push(id);
+            saveLearnedVerbs();
+            addXp(XP_PER_VERB);
+            checkBadges();
+        }
+    } else {
+        if (!learnedWords.includes(id)) {
+            learnedWords.push(id);
+            saveLearnedWords();
+            addXp(XP_PER_VERB);
+            checkBadges();
+        }
+    }
+    if (currentMixedIndex < getMixedPool().length - 1) {
+        showMixedSection(currentMixedIndex + 1);
+    } else {
+        showMixedSection(currentMixedIndex);
+    }
+}
+
 function showVerbsSection(index) {
     const content = document.getElementById('content-area');
     content.style.display = 'block';
@@ -868,7 +1093,11 @@ function showTestsSection(index) {
                     <button onclick="showTestModeSelect()" class="close-btn">✕</button>
                 </div>
                 <div class="progress-text">${currentQuestionIndex + 1} / ${testDeck.length}</div>
-                <p class="text-lg mb-4">${question.question}</p>
+                <div class="flex-between" style="align-items:flex-start; gap:8px;">
+                    <p class="text-lg mb-4" style="flex:1;">${question.question}</p>
+                    ${question.hint ? `<button class="fav-star-btn" style="font-size:1.1rem;" onclick="toggleQuestionHint(${question.id})" title="Azərbaycanca kömək">❓</button>` : ''}
+                </div>
+                ${question.hint ? `<div id="hint-${question.id}" class="notif-status" style="display:none; margin-top:-10px; margin-bottom:14px;">💡 ${question.hint}</div>` : ''}
                 <div class="mb-4">${optionsHtml}</div>
                 <button onclick="checkChoiceAnswer(${question.id})" class="glass-button py-3 font-bold">Cavabı yoxla</button>
                 <div id="feedback-${question.id}" class="feedback"></div>
@@ -883,7 +1112,11 @@ function showTestsSection(index) {
                     <button onclick="showTestModeSelect()" class="close-btn">✕</button>
                 </div>
                 <div class="progress-text">${currentQuestionIndex + 1} / ${testDeck.length}</div>
-                <p class="text-lg mb-4">${question.question}</p>
+                <div class="flex-between" style="align-items:flex-start; gap:8px;">
+                    <p class="text-lg mb-4" style="flex:1;">${question.question}</p>
+                    ${question.hint ? `<button class="fav-star-btn" style="font-size:1.1rem;" onclick="toggleQuestionHint(${question.id})" title="Azərbaycanca kömək">❓</button>` : ''}
+                </div>
+                ${question.hint ? `<div id="hint-${question.id}" class="notif-status" style="display:none; margin-top:-10px; margin-bottom:14px;">💡 ${question.hint}</div>` : ''}
                 <input type="text" id="input-${question.id}" class="input-field mb-4" placeholder="Cavabınızı yazın" autocomplete="off">
                 <button onclick="checkInputAnswer(${question.id})" class="glass-button py-3 font-bold">Cavabı yoxla</button>
                 <div id="feedback-${question.id}" class="feedback"></div>
@@ -895,6 +1128,12 @@ function showTestsSection(index) {
 
 function navigateQuestion(delta) {
     showTestsSection(currentQuestionIndex + delta);
+}
+
+function toggleQuestionHint(id) {
+    const el = document.getElementById('hint-' + id);
+    if (!el) return;
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
 function checkChoiceAnswer(qid) {
@@ -2165,7 +2404,7 @@ function renderNotificationCardHtml() {
 }
 
 // ==================== EVENT LISTENERS ====================
-document.getElementById('btn-verbs').addEventListener('click', () => showVerbsSection());
+document.getElementById('btn-vocab').addEventListener('click', () => showVocabModeSelect());
 document.getElementById('btn-dialogues').addEventListener('click', () => showDialoguesSection());
 document.getElementById('btn-tests').addEventListener('click', () => showTestModeSelect());
 document.getElementById('btn-flashcards').addEventListener('click', () => showFlashcardModeSelect());

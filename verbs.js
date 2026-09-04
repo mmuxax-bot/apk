@@ -931,7 +931,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "رَكِبَ",
-        "translation": "minddi",
+        "translation": "mindi",
         "examples": [
           {
             "arabic": "هُوَ رَكِبَ أَمْسِ.",
@@ -968,7 +968,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "نَزَلَ",
-        "translation": "enddi",
+        "translation": "endi",
         "examples": [
           {
             "arabic": "هُوَ نَزَلَ أَمْسِ.",
@@ -13215,7 +13215,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "اِبْتَسَمَ",
-        "translation": "gülümsədə",
+        "translation": "gülümsədi",
         "examples": [
           {
             "arabic": "هُوَ اِبْتَسَمَ أَمْسِ.",
@@ -13326,7 +13326,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "رَغِبَ",
-        "translation": "istədə",
+        "translation": "istədi",
         "examples": [
           {
             "arabic": "هُوَ رَغِبَ أَمْسِ.",
@@ -13400,7 +13400,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "أَرَادَ",
-        "translation": "istədə",
+        "translation": "istədi",
         "examples": [
           {
             "arabic": "هُوَ أَرَادَ أَمْسِ.",
@@ -13733,7 +13733,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "فَازَ",
-        "translation": "qalib gəldə",
+        "translation": "qalib gəldi",
         "examples": [
           {
             "arabic": "هُوَ فَازَ أَمْسِ.",
@@ -14103,7 +14103,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "تَقَدَّمَ",
-        "translation": "irəlilədə",
+        "translation": "irəlilədi",
         "examples": [
           {
             "arabic": "هُوَ تَقَدَّمَ أَمْسِ.",
@@ -14843,7 +14843,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "ضَرَّ",
-        "translation": "zərər verdə",
+        "translation": "zərər verdi",
         "examples": [
           {
             "arabic": "هُوَ ضَرَّ أَمْسِ.",
@@ -15102,7 +15102,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "رَكَّزَ",
-        "translation": "cəmlədə",
+        "translation": "cəmlədi",
         "examples": [
           {
             "arabic": "هُوَ رَكَّزَ أَمْسِ.",
@@ -15250,7 +15250,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "تَوَقَّعَ",
-        "translation": "gözlədə",
+        "translation": "gözlədi",
         "examples": [
           {
             "arabic": "هُوَ تَوَقَّعَ أَمْسِ.",
@@ -15361,7 +15361,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "شَكَّ",
-        "translation": "şübhələndə",
+        "translation": "şübhələndi",
         "examples": [
           {
             "arabic": "هُوَ شَكَّ أَمْسِ.",
@@ -15546,7 +15546,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "تَعَلَّمَ",
-        "translation": "öyrəndə",
+        "translation": "öyrəndi",
         "examples": [
           {
             "arabic": "هُوَ تَعَلَّمَ أَمْسِ.",
@@ -15805,7 +15805,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "أَخْبَرَ",
-        "translation": "xəbər verdə",
+        "translation": "xəbər verdi",
         "examples": [
           {
             "arabic": "هُوَ أَخْبَرَ أَمْسِ.",
@@ -15990,7 +15990,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "أَرْسَلَ",
-        "translation": "göndərdə",
+        "translation": "göndərdi",
         "examples": [
           {
             "arabic": "هُوَ أَرْسَلَ أَمْسِ.",
@@ -17174,7 +17174,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "نَظَفَ",
-        "translation": "təmizlədə",
+        "translation": "təmizlədi",
         "examples": [
           {
             "arabic": "هُوَ نَظَفَ أَمْسِ.",
@@ -17211,7 +17211,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "نَظَّفَ",
-        "translation": "təmizlədə",
+        "translation": "təmizlədi",
         "examples": [
           {
             "arabic": "هُوَ نَظَّفَ أَمْسِ.",
@@ -17507,7 +17507,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "مَضَغَ",
-        "translation": "çeynədə",
+        "translation": "çeynədi",
         "examples": [
           {
             "arabic": "هُوَ مَضَغَ أَمْسِ.",
@@ -18247,7 +18247,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "بَاتَ",
-        "translation": "gecələdə",
+        "translation": "gecələdi",
         "examples": [
           {
             "arabic": "هُوَ بَاتَ أَمْسِ.",
@@ -18580,7 +18580,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "سَمَحَ",
-        "translation": "icazə verdə",
+        "translation": "icazə verdi",
         "examples": [
           {
             "arabic": "هُوَ سَمَحَ أَمْسِ.",
@@ -18876,7 +18876,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "مَدَحَ",
-        "translation": "təriflədə",
+        "translation": "təriflədi",
         "examples": [
           {
             "arabic": "هُوَ مَدَحَ أَمْسِ.",
@@ -18913,7 +18913,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "ذَمَّ",
-        "translation": "pislədə",
+        "translation": "pislədi",
         "examples": [
           {
             "arabic": "هُوَ ذَمَّ أَمْسِ.",
@@ -19061,7 +19061,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "أَكَّدَ",
-        "translation": "təsdiqlədə",
+        "translation": "təsdiqlədi",
         "examples": [
           {
             "arabic": "هُوَ أَكَّدَ أَمْسِ.",
@@ -19320,7 +19320,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "أَجَّرَ",
-        "translation": "icarəyə verdə",
+        "translation": "icarəyə verdi",
         "examples": [
           {
             "arabic": "هُوَ أَجَّرَ أَمْسِ.",
@@ -19431,7 +19431,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "تَوَظَّفَ",
-        "translation": "işə düzəldə",
+        "translation": "işə düzəldi",
         "examples": [
           {
             "arabic": "هُوَ تَوَظَّفَ أَمْسِ.",
@@ -19912,7 +19912,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "أَلْقَى",
-        "translation": "atmaq, söylədə",
+        "translation": "atmaq, söylədi",
         "examples": [
           {
             "arabic": "هُوَ أَلْقَى أَمْسِ.",
@@ -20208,7 +20208,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "اِسْتَفْتَى",
-        "translation": "fətva istədə",
+        "translation": "fətva istədi",
         "examples": [
           {
             "arabic": "هُوَ اِسْتَفْتَى أَمْسِ.",
@@ -20282,7 +20282,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "تَصَدَّقَ",
-        "translation": "sədəqə verdə",
+        "translation": "sədəqə verdi",
         "examples": [
           {
             "arabic": "هُوَ تَصَدَّقَ أَمْسِ.",
@@ -20393,7 +20393,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "أَرْشَدَ",
-        "translation": "doğru yol göstərdə",
+        "translation": "doğru yol göstərdi",
         "examples": [
           {
             "arabic": "هُوَ أَرْشَدَ أَمْسِ.",
@@ -20837,7 +20837,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "تَبِعَ",
-        "translation": "izlədə",
+        "translation": "izlədi",
         "examples": [
           {
             "arabic": "هُوَ تَبِعَ أَمْسِ.",
@@ -20874,7 +20874,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "تَابَعَ",
-        "translation": "davam etdirmək, izlədə",
+        "translation": "davam etdirmək, izlədi",
         "examples": [
           {
             "arabic": "هُوَ تَابَعَ أَمْسِ.",
@@ -20948,7 +20948,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "قَصَدَ",
-        "translation": "niyyət etmək, yönəldə",
+        "translation": "niyyət etmək, yönəldi",
         "examples": [
           {
             "arabic": "هُوَ قَصَدَ أَمْسِ.",
@@ -20985,7 +20985,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "تَوَجَّهَ",
-        "translation": "yönəldə",
+        "translation": "yönəldi",
         "examples": [
           {
             "arabic": "هُوَ تَوَجَّهَ أَمْسِ.",
@@ -21170,7 +21170,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "صَادَفَ",
-        "translation": "rast gəldə",
+        "translation": "rast gəldi",
         "examples": [
           {
             "arabic": "هُوَ صَادَفَ أَمْسِ.",
@@ -21244,7 +21244,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "أَذِنَ",
-        "translation": "icazə verdə",
+        "translation": "icazə verdi",
         "examples": [
           {
             "arabic": "هُوَ أَذِنَ أَمْسِ.",
@@ -21429,7 +21429,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "اِنْتَظَرَ",
-        "translation": "gözlədə",
+        "translation": "gözlədi",
         "examples": [
           {
             "arabic": "هُوَ اِنْتَظَرَ أَمْسِ.",
@@ -23131,7 +23131,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "تَزَوَّجَ",
-        "translation": "evləndə",
+        "translation": "evləndi",
         "examples": [
           {
             "arabic": "هُوَ تَزَوَّجَ أَمْسِ.",
@@ -23797,7 +23797,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "تَنَظَّفَ",
-        "translation": "təmizləndə",
+        "translation": "təmizləndi",
         "examples": [
           {
             "arabic": "هُوَ تَنَظَّفَ أَمْسِ.",
@@ -24685,7 +24685,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "شَاهَدَ",
-        "translation": "izlədə",
+        "translation": "izlədi",
         "examples": [
           {
             "arabic": "هُوَ شَاهَدَ أَمْسِ.",
@@ -24833,7 +24833,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "عَثَرَ",
-        "translation": "tapmaq, büdrədə",
+        "translation": "tapmaq, büdrədi",
         "examples": [
           {
             "arabic": "هُوَ عَثَرَ أَمْسِ.",
@@ -24981,7 +24981,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "جَهِلَ",
-        "translation": "bilmədə",
+        "translation": "bilmədi",
         "examples": [
           {
             "arabic": "هُوَ جَهِلَ أَمْسِ.",
@@ -26239,7 +26239,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "اِرْتَفَعَ",
-        "translation": "yüksəldə",
+        "translation": "yüksəldi",
         "examples": [
           {
             "arabic": "هُوَ اِرْتَفَعَ أَمْسِ.",
@@ -26572,7 +26572,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "اِتَّجَهَ",
-        "translation": "istiqamətləndə",
+        "translation": "istiqamətləndi",
         "examples": [
           {
             "arabic": "هُوَ اِتَّجَهَ أَمْسِ.",
@@ -26757,7 +26757,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "قَاضَى",
-        "translation": "məhkəməyə verdə",
+        "translation": "məhkəməyə verdi",
         "examples": [
           {
             "arabic": "هُوَ قَاضَى أَمْسِ.",
@@ -27423,7 +27423,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "تَأَثَّرَ",
-        "translation": "təsirləndə",
+        "translation": "təsirləndi",
         "examples": [
           {
             "arabic": "هُوَ تَأَثَّرَ أَمْسِ.",
@@ -27460,7 +27460,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "اِهْتَمَّ",
-        "translation": "maraq göstərdə",
+        "translation": "maraq göstərdi",
         "examples": [
           {
             "arabic": "هُوَ اِهْتَمَّ أَمْسِ.",
@@ -27497,7 +27497,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "اِعْتَنَى",
-        "translation": "qayğı göstərdə",
+        "translation": "qayğı göstərdi",
         "examples": [
           {
             "arabic": "هُوَ اِعْتَنَى أَمْسِ.",
@@ -27571,7 +27571,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "اِنْدَهَشَ",
-        "translation": "heyrətləndə",
+        "translation": "heyrətləndi",
         "examples": [
           {
             "arabic": "هُوَ اِنْدَهَشَ أَمْسِ.",
@@ -27608,7 +27608,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "تَفَاجَأَ",
-        "translation": "təəccübləndə",
+        "translation": "təəccübləndi",
         "examples": [
           {
             "arabic": "هُوَ تَفَاجَأَ أَمْسِ.",
@@ -27645,7 +27645,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "اِسْتَغْرَبَ",
-        "translation": "təəccübləndə",
+        "translation": "təəccübləndi",
         "examples": [
           {
             "arabic": "هُوَ اِسْتَغْرَبَ أَمْسِ.",
@@ -27682,7 +27682,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "أُعْجِبَ",
-        "translation": "xoşuna gəldə",
+        "translation": "xoşuna gəldi",
         "examples": [
           {
             "arabic": "هُوَ أُعْجِبَ أَمْسِ.",
@@ -28015,7 +28015,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "تَرَقَّبَ",
-        "translation": "gözlədə",
+        "translation": "gözlədi",
         "examples": [
           {
             "arabic": "هُوَ تَرَقَّبَ أَمْسِ.",
@@ -28311,7 +28311,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "أَظْهَرَ",
-        "translation": "göstərdə",
+        "translation": "göstərdi",
         "examples": [
           {
             "arabic": "هُوَ أَظْهَرَ أَمْسِ.",
@@ -28385,7 +28385,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "أَبْدَى",
-        "translation": "bildirmək, göstərdə",
+        "translation": "bildirmək, göstərdi",
         "examples": [
           {
             "arabic": "هُوَ أَبْدَى أَمْسِ.",
@@ -28644,7 +28644,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "اِسْتَوَى",
-        "translation": "bərabər olmaq, düzəldə",
+        "translation": "bərabər olmaq, düzəldi",
         "examples": [
           {
             "arabic": "هُوَ اِسْتَوَى أَمْسِ.",
@@ -28829,7 +28829,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "قَوِيَ",
-        "translation": "gücləndə",
+        "translation": "gücləndi",
         "examples": [
           {
             "arabic": "هُوَ قَوِيَ أَمْسِ.",
@@ -28866,7 +28866,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "ضَعُفَ",
-        "translation": "zəiflədə",
+        "translation": "zəiflədi",
         "examples": [
           {
             "arabic": "هُوَ ضَعُفَ أَمْسِ.",
@@ -29014,7 +29014,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "اِسْتَقْوَى",
-        "translation": "gücləndə",
+        "translation": "gücləndi",
         "examples": [
           {
             "arabic": "هُوَ اِسْتَقْوَى أَمْسِ.",
@@ -29717,7 +29717,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "أَخْطَرَ",
-        "translation": "xəbər verdə",
+        "translation": "xəbər verdi",
         "examples": [
           {
             "arabic": "هُوَ أَخْطَرَ أَمْسِ.",
@@ -31530,7 +31530,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "دَرَّسَ",
-        "translation": "dərs dedə",
+        "translation": "dərs dedi",
         "examples": [
           {
             "arabic": "هُوَ دَرَّسَ أَمْسِ.",
@@ -31715,7 +31715,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "تَمَهَّلَ",
-        "translation": "tələsmədə",
+        "translation": "tələsmədi",
         "examples": [
           {
             "arabic": "هُوَ تَمَهَّلَ أَمْسِ.",
@@ -31937,7 +31937,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "أَقْفَلَ",
-        "translation": "kilidlədə",
+        "translation": "kilidlədi",
         "examples": [
           {
             "arabic": "هُوَ أَقْفَلَ أَمْسِ.",
@@ -32492,7 +32492,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "عَضَّ",
-        "translation": "dişlədə",
+        "translation": "dişlədi",
         "examples": [
           {
             "arabic": "هُوَ عَضَّ أَمْسِ.",
@@ -33306,7 +33306,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "اِتَّسَعَ",
-        "translation": "genişləndə",
+        "translation": "genişləndi",
         "examples": [
           {
             "arabic": "هُوَ اِتَّسَعَ أَمْسِ.",
@@ -33639,7 +33639,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "مَهَرَ",
-        "translation": "bacarıq göstərdə",
+        "translation": "bacarıq göstərdi",
         "examples": [
           {
             "arabic": "هُوَ مَهَرَ أَمْسِ.",
@@ -34231,7 +34231,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "اِسْتَنْجَدَ",
-        "translation": "yardım istədə",
+        "translation": "yardım istədi",
         "examples": [
           {
             "arabic": "هُوَ اِسْتَنْجَدَ أَمْسِ.",
@@ -34379,7 +34379,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "ضَمِنَ",
-        "translation": "zəmanət verdə",
+        "translation": "zəmanət verdi",
         "examples": [
           {
             "arabic": "هُوَ ضَمِنَ أَمْسِ.",
@@ -34453,7 +34453,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "اِكْتَفَى",
-        "translation": "kifayətləndə",
+        "translation": "kifayətləndi",
         "examples": [
           {
             "arabic": "هُوَ اِكْتَفَى أَمْسِ.",
@@ -35045,7 +35045,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "تَظَاهَرَ",
-        "translation": "nümayiş etmək, özünü göstərdə",
+        "translation": "nümayiş etmək, özünü göstərdi",
         "examples": [
           {
             "arabic": "هُوَ تَظَاهَرَ أَمْسِ.",
@@ -35119,7 +35119,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "أَيَّدَ",
-        "translation": "dəstəklədə",
+        "translation": "dəstəklədi",
         "examples": [
           {
             "arabic": "هُوَ أَيَّدَ أَمْسِ.",
@@ -35341,7 +35341,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "وَثِقَ",
-        "translation": "güvəndə",
+        "translation": "güvəndi",
         "examples": [
           {
             "arabic": "هُوَ وَثِقَ أَمْسِ.",
@@ -35378,7 +35378,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "اِشْتَبَهَ",
-        "translation": "şübhələndə",
+        "translation": "şübhələndi",
         "examples": [
           {
             "arabic": "هُوَ اِشْتَبَهَ أَمْسِ.",
@@ -35711,7 +35711,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "اِسْتَنْصَرَ",
-        "translation": "yardım istədə",
+        "translation": "yardım istədi",
         "examples": [
           {
             "arabic": "هُوَ اِسْتَنْصَرَ أَمْسِ.",
@@ -36229,7 +36229,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "اِسْتَظْهَرَ",
-        "translation": "əzbərdən dedə",
+        "translation": "əzbərdən dedi",
         "examples": [
           {
             "arabic": "هُوَ اِسْتَظْهَرَ أَمْسِ.",
@@ -36488,7 +36488,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "أَرَى",
-        "translation": "göstərdə",
+        "translation": "göstərdi",
         "examples": [
           {
             "arabic": "هُوَ أَرَى أَمْسِ.",
@@ -36969,7 +36969,7 @@ const verbsData = [
     "forms": {
       "past": {
         "arabic": "اِكْتَأَبَ",
-        "translation": "kədərləndə",
+        "translation": "kədərləndi",
         "examples": [
           {
             "arabic": "هُوَ اِكْتَأَبَ أَمْسِ.",

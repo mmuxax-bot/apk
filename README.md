@@ -33,6 +33,8 @@ Bax: **[PLAY_STORE_GUIDE.md](./PLAY_STORE_GUIDE.md)** — imzalama açarı (keys
 - **Splash screen (açılış ekranı)** — tətbiqin öz brend rənglərinə uyğun açılış ekranı, ağ boş ekran yerinə.
 - **✍️ Yazı məşqi** — 28 ərəb əlifbası hərfinin hamısı üçün barmaqla izləyərək (tracing) yazı məşqi, boz hərfin üzərindən keçmək üsulu ilə.
 - **🎤 Tələffüz yoxlaması** — Feillər və Dialoqlar bölmələrində 🎤 ikonuna basıb sözü/cümləni tələffüz edin, Android-in native nitq-tanıma sistemi dediyinizi mətnə çevirib düzgünlüyünü yoxlayır (mikrofon icazəsi tələb olunur).
+- **📚 Söz öyrənməyə başla** — ana səhifədə "Feillər" düyməsi indi 3 yarımbölməli qapıya çevrilib: **Feillər** (fellər), **Sözlər** (132 ümumi isim/sifət — ailə, rəqəmlər, rənglər, bədən üzvləri, yemək və s.), **Qarışıq** (hər ikisi bir siyahıda, ardıcıl gəzinti). Sözlər öz favorit/öyrənilmə izləməsinə malikdir.
+- **❓ Sual köməyi** — Testlərdə tam ərəbcə yazılmış suallarda (əsasən dini test bankında) sualın yanında ❓ ikonu görünür, basanda Azərbaycanca izah/tərcümə göstərir.
 - Bütün digər funksiyalar (Feillər, Dialoqlar, Testlər, Flash kartlar, SRS, Statistika, Ayarlar və s.) olduğu kimi qalır — heç nə itməyib.
 
 ## Kodu redaktə etmək
