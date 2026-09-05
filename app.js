@@ -672,6 +672,102 @@ function markMixedLearned(id, kind) {
     }
 }
 
+// ==================== FELİN BÜTÜN BABLARI (10 QƏLİB) ====================
+// Yalnız TAM SAĞLAM (zəif hərfsiz) 3 hərfli köklər üçün etibarlı işləyir.
+const WEAK_LETTERS = new Set(['و', 'ي', 'ا', 'أ', 'إ', 'آ', 'ء', 'ؤ', 'ئ']);
+const HARAKAT = { FATHA: '\u064E', KASRA: '\u0650', DAMMA: '\u064F', SUKUN: '\u0652', SHADDA: '\u0651' };
+
+function extractTriliteralRoot(arabicPast) {
+    return arabicPast.replace(/[\u064B-\u0652\u0670\u0640]/g, '');
+}
+
+function isSoundTriliteralRoot(root) {
+    if (!root || root.length !== 3) return false;
+    return ![...root].some(ch => WEAK_LETTERS.has(ch));
+}
+
+function generateBabForms(root) {
+    const [r1, r2, r3] = root;
+    const { FATHA, KASRA, SUKUN, SHADDA } = HARAKAT;
+    const ALIF = 'ا', HAMZA = 'أ', TA = 'ت', NUN = 'ن', SIN = 'س';
+
+    // Bab VIII-də ت hərfi kökün ilk hərfindən asılı olaraq assimilyasiyaya uğrayır
+    const emphaticGroup = new Set(['ص', 'ض', 'ط', 'ظ']);   // ت → ط (ayrıca qalır): اصطبر
+    const doubleAssimilateGroup = new Set(['ت', 'ث', 'د', 'ذ']); // ت tam əriyir, r1 ikiqat olur: اتّبع، ادّفع، اذّكر
+    let form8;
+    if (emphaticGroup.has(r1)) {
+        form8 = ALIF + KASRA + r1 + SUKUN + 'ط' + FATHA + r2 + FATHA + r3 + FATHA;
+    } else if (r1 === 'ز') {
+        form8 = ALIF + KASRA + r1 + SUKUN + 'د' + FATHA + r2 + FATHA + r3 + FATHA;
+    } else if (doubleAssimilateGroup.has(r1)) {
+        form8 = ALIF + KASRA + r1 + SHADDA + FATHA + r2 + FATHA + r3 + FATHA;
+    } else {
+        form8 = ALIF + KASRA + r1 + SUKUN + TA + FATHA + r2 + FATHA + r3 + FATHA;
+    }
+
+    return [
+        { bab: 'I', arabic: r1 + FATHA + r2 + FATHA + r3 + FATHA, note: 'Əsas fel (bu felin özü)' },
+        { bab: 'II', arabic: r1 + FATHA + r2 + SHADDA + FATHA + r3 + FATHA, note: 'Çox vaxt təsirlilik/intensivlik bildirir' },
+        { bab: 'III', arabic: r1 + FATHA + ALIF + r2 + FATHA + r3 + FATHA, note: 'Çox vaxt qarşılıqlı fəaliyyət bildirir' },
+        { bab: 'IV', arabic: HAMZA + FATHA + r1 + SUKUN + r2 + FATHA + r3 + FATHA, note: 'Çox vaxt etdirmə (kauzativ) bildirir' },
+        { bab: 'V', arabic: TA + FATHA + r1 + FATHA + r2 + SHADDA + FATHA + r3 + FATHA, note: 'Çox vaxt refleksiv (özü üzərində) bildirir' },
+        { bab: 'VI', arabic: TA + FATHA + r1 + FATHA + ALIF + r2 + FATHA + r3 + FATHA, note: 'Çox vaxt qarşılıqlı/bir-birinə bildirir' },
+        { bab: 'VII', arabic: ALIF + KASRA + NUN + SUKUN + r1 + FATHA + r2 + FATHA + r3 + FATHA, note: 'Çox vaxt passiv bildirir' },
+        { bab: 'VIII', arabic: form8, note: 'Çox vaxt refleksiv/qarşılıqlı bildirir' },
+        { bab: 'IX', arabic: ALIF + KASRA + r1 + SUKUN + r2 + FATHA + r3 + SHADDA + FATHA, note: 'Adətən rəng və ya qüsur bildirir' },
+        { bab: 'X', arabic: ALIF + KASRA + SIN + SUKUN + TA + FATHA + r1 + SUKUN + r2 + FATHA + r3 + FATHA, note: 'Çox vaxt "tələb etmək" bildirir' }
+    ];
+}
+
+function showAllBabsSection(verbId) {
+    const verb = verbsData.find(v => v.id === verbId);
+    if (!verb) return;
+    const root = extractTriliteralRoot(verb.forms.past.arabic);
+    const content = document.getElementById('content-area');
+    content.style.display = 'block';
+    document.getElementById('main-menu').style.display = 'none';
+
+    if (!isSoundTriliteralRoot(root)) {
+        content.innerHTML = `
+            <div class="glass-card text-center fade-in">
+                <p style="font-size: 2rem; margin-bottom: 12px;">🚧</p>
+                <h2 class="text-xl font-bold mb-2">Hələ dəstəklənmir</h2>
+                <p class="text-white-75 mb-4">Bu felin kökündə zəif hərf var (و، ي، ا، ء) — dəqiq bab cədvəli hələ hazırlanmayıb.</p>
+                <button onclick="showVerbsSection(${currentVerbIndex})" class="glass-button py-3">Geri</button>
+            </div>
+        `;
+        return;
+    }
+
+    const babs = generateBabForms(root);
+    const babsHtml = babs.map(b => `
+        <div class="rounded-xl mb-2" style="background: rgba(255,255,255,0.05); padding: 12px;">
+            <div class="flex-between mb-1">
+                <span class="font-semibold" style="font-size: 0.8rem; color: var(--text-50);">${b.bab} bab</span>
+                <button class="speak-btn-inline" onclick="speakArabicFromEvent(event, '${b.arabic}')" title="Səsləndir">🔊</button>
+            </div>
+            <p class="arabic-text mb-1">${displayArabic(b.arabic)}</p>
+            <p class="text-white-75" style="font-size: 0.8rem;">${b.note}</p>
+        </div>
+    `).join('');
+
+    content.innerHTML = `
+        <div class="glass-card fade-in">
+            <div class="flex-between mb-3">
+                <h2 class="text-xl font-bold">🔟 Bütün babları</h2>
+                <button onclick="showVerbsSection(${currentVerbIndex})" class="close-btn">✕</button>
+            </div>
+            <p class="text-white-75 mb-3" style="font-size: 0.8rem;">
+                Kök: <span class="arabic-text" style="font-size: 1.1rem;">${root}</span> (${verb.meaning}) —
+                bu, kökün 10 klassik qəlibə nəzəri tətbiqidir. Hər bab real, gündəlik işlənən söz olmaya bilər;
+                məqsəd fel qəlib sistemini göstərməkdir.
+            </p>
+            ${babsHtml}
+            <button onclick="showVerbsSection(${currentVerbIndex})" class="glass-button py-3 font-bold mt-2">Geri</button>
+        </div>
+    `;
+}
+
 function showVerbsSection(index) {
     const content = document.getElementById('content-area');
     content.style.display = 'block';
@@ -740,6 +836,7 @@ function showVerbsSection(index) {
                 <h3 class="font-semibold mb-2">Formalar</h3>
                 <div>${formsHtml}</div>
             </div>
+            ${isSoundTriliteralRoot(extractTriliteralRoot(verb.forms.past.arabic)) ? `<button onclick="showAllBabsSection(${verb.id})" class="glass-button mb-3" style="background: rgba(168,85,247,0.18); border-color: rgba(192,132,252,0.5);">🔟 Bütün babları gör</button>` : ''}
             <button onclick="markVerbLearned(${verb.id})" class="glass-button py-3 font-bold text-lg">
                 ${isLearned ? '✓ Öyrənilib' : '✓ Öyrəndim'}
             </button>
