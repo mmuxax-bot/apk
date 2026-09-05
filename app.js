@@ -1786,16 +1786,16 @@ function renderBackupCardHtml() {
 // ==================== ANDROID GERİ DÜYMƏSİ ====================
 // ==================== YAZI MƏŞQİ (ƏRƏB ƏLİFBASI) ====================
 const ARABIC_LETTERS = [
-    { letter: 'ا', name: 'əlif' }, { letter: 'ب', name: 'ba' }, { letter: 'ت', name: 'ta' },
-    { letter: 'ث', name: 'sa' }, { letter: 'ج', name: 'cim' }, { letter: 'ح', name: 'ha (h)' },
-    { letter: 'خ', name: 'xa' }, { letter: 'د', name: 'dal' }, { letter: 'ذ', name: 'zal' },
-    { letter: 'ر', name: 'ra' }, { letter: 'ز', name: 'zay' }, { letter: 'س', name: 'sin' },
+    { letter: 'ا', name: 'əlif' }, { letter: 'ب', name: 'bə' }, { letter: 'ت', name: 'tə' },
+    { letter: 'ث', name: 'sə' }, { letter: 'ج', name: 'cim' }, { letter: 'ح', name: 'ha' },
+    { letter: 'خ', name: 'xa' }, { letter: 'د', name: 'dəl' }, { letter: 'ذ', name: 'zəl' },
+    { letter: 'ر', name: 'ra' }, { letter: 'ز', name: 'zey' }, { letter: 'س', name: 'sin' },
     { letter: 'ش', name: 'şin' }, { letter: 'ص', name: 'sad' }, { letter: 'ض', name: 'dad' },
-    { letter: 'ط', name: 'ta (tı)' }, { letter: 'ظ', name: 'za (zı)' }, { letter: 'ع', name: 'ayn' },
-    { letter: 'غ', name: 'ğayn' }, { letter: 'ف', name: 'fa' }, { letter: 'ق', name: 'qaf' },
-    { letter: 'ك', name: 'kaf' }, { letter: 'ل', name: 'lam' }, { letter: 'م', name: 'mim' },
-    { letter: 'ن', name: 'nun' }, { letter: 'ه', name: 'ha' }, { letter: 'و', name: 'vav' },
-    { letter: 'ي', name: 'ya' }
+    { letter: 'ط', name: 'ta' }, { letter: 'ظ', name: 'za' }, { letter: 'ع', name: 'ayn' },
+    { letter: 'غ', name: 'ğayn' }, { letter: 'ف', name: 'fə' }, { letter: 'ق', name: 'qaf' },
+    { letter: 'ك', name: 'kəf' }, { letter: 'ل', name: 'ləm' }, { letter: 'م', name: 'mim' },
+    { letter: 'ن', name: 'nun' }, { letter: 'ه', name: 'hə' }, { letter: 'و', name: 'vav' },
+    { letter: 'ي', name: 'yə' }
 ];
 
 let currentLetterIndex = 0;
@@ -2356,7 +2356,7 @@ function renderSettingsCardHtml() {
                     <span class="slider-toggle"></span>
                 </label>
             </div>
-            <p class="notif-status">Aktiv olanda hərəkələr (fətihə, kəsrə, zəmmə) gizlədilir — orta/yuxarı səviyyə üçün faydalıdır.</p>
+            <p class="notif-status">Aktiv olanda hərəkələr (fəthə, kəsrə, damma) gizlədilir — orta/yuxarı səviyyə üçün faydalıdır.</p>
         </div>
     `;
 }
