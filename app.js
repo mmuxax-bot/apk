@@ -598,9 +598,12 @@ function showMixedSection(index) {
         const formLabels = { past: 'Keçmiş', present: 'İndiki', imperative: 'Əmr' };
         for (const [key, label] of Object.entries(formLabels)) {
             formsHtml += `
-                <div class="flex-between border-b py-2">
+                <div class="flex-between border-b py-2 clickable" onclick="openFormExamples(${item.id}, '${key}', 'mixed')">
                     <span class="text-white-75">${label}</span>
-                    <span class="arabic-text font-bold">${displayArabic(item.forms[key].arabic)}</span>
+                    <span style="display:flex; align-items:center; gap:6px;">
+                        <button class="speak-btn-inline" onclick="speakArabicFromEvent(event, '${item.forms[key].arabic}')" title="Səsləndir">🔊</button>
+                        <span class="arabic-text font-bold">${displayArabic(item.forms[key].arabic)}</span>
+                    </span>
                     <span class="text-white-75" style="font-size: 0.875rem;">${item.forms[key].translation}</span>
                 </div>
             `;
@@ -810,13 +813,15 @@ function toggleFavoriteAndRerenderVerb(id) {
     showVerbsSection(currentVerbIndex);
 }
 
-function openFormExamples(verbId, formKey) {
+function openFormExamples(verbId, formKey, returnTo) {
     const verb = verbsData.find(v => v.id === verbId);
     if (!verb) return;
     const formData = verb.forms[formKey];
     const content = document.getElementById('content-area');
     content.style.display = 'block';
     document.getElementById('main-menu').style.display = 'none';
+
+    const backAction = returnTo === 'mixed' ? `showMixedSection(${currentMixedIndex})` : `showVerbsSection(${currentVerbIndex})`;
 
     let examplesHtml = '';
     formData.examples.forEach(ex => {
@@ -835,7 +840,7 @@ function openFormExamples(verbId, formKey) {
         <div class="glass-card fade-in">
             <div class="flex-between mb-4">
                 <h2 class="text-xl font-bold">Nümunə Cümlələr</h2>
-                <button onclick="showVerbsSection(${currentVerbIndex})" class="close-btn">✕</button>
+                <button onclick="${backAction}" class="close-btn">✕</button>
             </div>
             <div class="text-center mb-4">
                 <div style="display:flex; align-items:center; justify-content:center; gap:10px;">
@@ -845,7 +850,7 @@ function openFormExamples(verbId, formKey) {
                 <p class="text-white-75">${verb.meaning} (${formData.translation})</p>
             </div>
             ${examplesHtml}
-            <button onclick="showVerbsSection(${currentVerbIndex})" class="glass-button py-3 font-bold mt-3">Geri</button>
+            <button onclick="${backAction}" class="glass-button py-3 font-bold mt-3">Geri</button>
         </div>
     `;
 }
