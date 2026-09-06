@@ -213,6 +213,38 @@ function renderHomeStats() {
 }
 
 // Statistika səhifəsi
+function renderWeeklyChartHtml() {
+    const dayNames = ['B.', 'B.e.', 'Ç.a.', 'Ç.', 'C.a.', 'C.', 'Ş.'];
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const key = d.toISOString().slice(0, 10);
+        days.push({ key, label: dayNames[d.getDay()], xp: dailyXpLog[key] || 0 });
+    }
+    const maxXp = Math.max(1, ...days.map(d => d.xp));
+    const bars = days.map(d => {
+        const heightPct = Math.max(4, Math.round((d.xp / maxXp) * 100));
+        const isToday = d.key === todayStr();
+        return `
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;">
+                <span style="font-size:0.7rem; color:var(--text-50);">${d.xp}</span>
+                <div style="width:100%; max-width:28px; height:80px; display:flex; align-items:flex-end; background:var(--overlay-08); border-radius:6px; overflow:hidden;">
+                    <div style="width:100%; height:${heightPct}%; background:${isToday ? 'linear-gradient(to top, #22c55e, #4ade80)' : 'linear-gradient(to top, #3b82f6, #60a5fa)'}; border-radius:6px 6px 0 0;"></div>
+                </div>
+                <span style="font-size:0.7rem; color:var(--text-75); font-weight:${isToday ? '700' : '400'};">${d.label}</span>
+            </div>
+        `;
+    }).join('');
+
+    return `
+        <div class="notif-card">
+            <h3 class="font-semibold mb-2">📊 Son 7 gün (XP)</h3>
+            <div style="display:flex; gap:6px; align-items:flex-end;">${bars}</div>
+        </div>
+    `;
+}
+
 function showStatsSection() {
     const content = document.getElementById('content-area');
     content.style.display = 'block';
@@ -251,6 +283,8 @@ function showStatsSection() {
                 <div class="stat-row"><span class="text-white-75">Ən uzun seriya</span><span class="font-bold">${streakData.longestStreak} gün</span></div>
                 <div class="stat-row"><span class="text-white-75">Son fəaliyyət</span><span class="font-bold">${lastActive}</span></div>
             </div>
+
+            ${renderWeeklyChartHtml()}
 
             <h3 class="font-semibold mb-2">Nişanlar</h3>
             <div class="badge-grid">${badgesHtml}</div>
@@ -438,6 +472,80 @@ function clampIndex(index, length) {
 }
 
 // ==================== RENDER FUNCTIONS ====================
+// ==================== İLK İSTİFADƏ BƏLƏDÇİSİ (ONBOARDING) ====================
+const ONBOARDING_STEPS = [
+    { icon: '👋', title: 'Xoş gəlmisiniz!', text: '"Hər Gün Ərəbcə" ilə ərəbcəni addım-addım öyrənəcəksiniz. Gəlin əsas bölmələrlə tanış olaq.' },
+    { icon: '📚', title: 'Söz öyrənməyə başla', text: 'Fellər, ümumi sözlər və ya hər ikisini qarışıq öyrənə bilərsiniz. Hər sözü səsləndirmək və tələffüzünüzü yoxlamaq mümkündür.' },
+    { icon: '💬', title: 'Dialoqlar', text: 'Gündəlik həyatdan real dialoqlarla ərəbcəni kontekstdə görün.' },
+    { icon: '📝', title: 'Testlər', text: 'Öyrəndiklərinizi sınayın. Səhv etdiyiniz suallar avtomatik "Çətin suallar" bölməsinə toplanır ki, təkrar edə biləsiniz.' },
+    { icon: '🃏', title: 'Flash kartlar', text: 'Ağıllı təkrar sistemi (SRS) bilmədiyiniz sözləri daha tez-tez, bildiklərinizi daha seyrək göstərir.' },
+    { icon: '🔥', title: 'Davamlılıq və XP', text: 'Hər gün məşq edərək seriya (streak) saxlayın, XP toplayıb səviyyə qaldırın. Ayarlar bölməsindən görünüşü və xatırlatmaları fərdiləşdirə bilərsiniz.' }
+];
+let onboardingStepIndex = 0;
+
+function hasSeenOnboarding() {
+    return localStorage.getItem('hasSeenOnboarding') === 'true';
+}
+
+function markOnboardingSeen() {
+    localStorage.setItem('hasSeenOnboarding', 'true');
+}
+
+function showOnboarding() {
+    onboardingStepIndex = 0;
+    renderOnboardingStep();
+}
+
+function renderOnboardingStep() {
+    const step = ONBOARDING_STEPS[onboardingStepIndex];
+    const isLast = onboardingStepIndex === ONBOARDING_STEPS.length - 1;
+    const overlay = document.createElement('div');
+    overlay.id = 'onboarding-overlay';
+    overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px;';
+    overlay.innerHTML = `
+        <div class="glass-card" style="max-width:380px; margin:0;">
+            <div class="text-center mb-3">
+                <p style="font-size:2.5rem; margin-bottom:8px;">${step.icon}</p>
+                <h2 class="text-xl font-bold mb-2">${step.title}</h2>
+                <p class="text-white-75">${step.text}</p>
+            </div>
+            <div class="text-center mb-3" style="font-size:0.8rem; color:var(--text-50);">${onboardingStepIndex + 1} / ${ONBOARDING_STEPS.length}</div>
+            <div class="nav-row">
+                ${onboardingStepIndex > 0 ? `<button class="glass-button" onclick="onboardingPrev()">◀ Geri</button>` : `<button class="glass-button" onclick="skipOnboarding()">Keç</button>`}
+                <button class="glass-button continue-btn" onclick="${isLast ? 'finishOnboarding()' : 'onboardingNext()'}">${isLast ? '✓ Başlayaq!' : 'İrəli ▶'}</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+
+function removeOnboardingOverlay() {
+    const el = document.getElementById('onboarding-overlay');
+    if (el) el.remove();
+}
+
+function onboardingNext() {
+    onboardingStepIndex++;
+    removeOnboardingOverlay();
+    renderOnboardingStep();
+}
+
+function onboardingPrev() {
+    onboardingStepIndex--;
+    removeOnboardingOverlay();
+    renderOnboardingStep();
+}
+
+function skipOnboarding() {
+    removeOnboardingOverlay();
+    markOnboardingSeen();
+}
+
+function finishOnboarding() {
+    removeOnboardingOverlay();
+    markOnboardingSeen();
+}
+
 function showMainMenu() {
     document.getElementById('content-area').innerHTML = '';
     document.getElementById('content-area').style.display = 'none';
@@ -522,6 +630,7 @@ function showWordsSection(index) {
             <div class="flex-between mb-4">
                 <h2 class="text-2xl font-bold">Söz öyrən</h2>
                 <div style="display:flex; align-items:center; gap:6px;">
+                    <button onclick="showWordSearch()" class="fav-star-btn" title="Axtar">🔍</button>
                     <button onclick="toggleWordFavoriteAndRerender(${word.id})" class="fav-star-btn" title="Favoritə əlavə et">${isFavorite ? '⭐' : '☆'}</button>
                     <button onclick="showMainMenu()" class="close-btn">✕</button>
                 </div>
@@ -549,6 +658,58 @@ function showWordsSection(index) {
 
 function navigateWord(delta) {
     showWordsSection(currentWordIndex + delta);
+}
+
+// ==================== AXTARIŞ (SÖZLƏR) ====================
+function showWordSearch() {
+    const content = document.getElementById('content-area');
+    content.style.display = 'block';
+    document.getElementById('main-menu').style.display = 'none';
+    content.innerHTML = `
+        <div class="glass-card fade-in">
+            <div class="flex-between mb-4">
+                <h2 class="text-xl font-bold">🔍 Söz axtar</h2>
+                <button onclick="showWordsSection(${currentWordIndex})" class="close-btn">✕</button>
+            </div>
+            <input type="text" id="word-search-input" class="input-field mb-4" placeholder="Ərəbcə və ya azərbaycanca yazın..." autocomplete="off" oninput="filterWordSearch(this.value)">
+            <div id="word-search-results"></div>
+        </div>
+    `;
+    document.getElementById('word-search-input').focus();
+    filterWordSearch('');
+}
+
+function filterWordSearch(query) {
+    const resultsDiv = document.getElementById('word-search-results');
+    if (!resultsDiv) return;
+    const q = query.trim().toLowerCase();
+    const qNormalized = normalizeArabic(query.trim());
+
+    let matches;
+    if (q === '') {
+        matches = wordsData.slice(0, 30);
+    } else {
+        matches = wordsData.filter(w =>
+            w.meaning.toLowerCase().includes(q) ||
+            (qNormalized && normalizeArabic(w.arabic).includes(qNormalized))
+        ).slice(0, 60);
+    }
+
+    if (matches.length === 0) {
+        resultsDiv.innerHTML = `<p class="text-white-75 text-center" style="padding: 20px 0;">Nəticə tapılmadı</p>`;
+        return;
+    }
+
+    resultsDiv.innerHTML = matches.map(w => {
+        const idx = wordsData.findIndex(x => x.id === w.id);
+        const learned = learnedWords.includes(w.id) ? '✓ ' : '';
+        return `
+            <div class="flex-between border-b py-2 clickable" onclick="showWordsSection(${idx})">
+                <span class="arabic-text">${displayArabic(w.arabic)}</span>
+                <span class="text-white-75" style="font-size: 0.875rem;">${learned}${w.meaning}</span>
+            </div>
+        `;
+    }).join('');
 }
 
 function toggleWordFavoriteAndRerender(id) {
@@ -686,10 +847,14 @@ function isSoundTriliteralRoot(root) {
     return ![...root].some(ch => WEAK_LETTERS.has(ch));
 }
 
-function generateBabForms(root) {
+function generateBabForms(root, meaning, actualPastForm) {
     const [r1, r2, r3] = root;
     const { FATHA, KASRA, SUKUN, SHADDA } = HARAKAT;
     const ALIF = 'ا', HAMZA = 'أ', TA = 'ت', NUN = 'ن', SIN = 'س';
+    const m = meaning || '(məna)';
+    // Bab I-in özündə 3 alt-qəlib var (فَعَلَ / فَعِلَ / فَعُلَ) — orta hərfin hərəkəsi felə görə dəyişir,
+    // ona görə mexaniki qurmaq əvəzinə felin ƏSL keçmiş zaman formasını istifadə edirik.
+    const babOne = actualPastForm || (r1 + FATHA + r2 + FATHA + r3 + FATHA);
 
     // Bab VIII-də ت hərfi kökün ilk hərfindən asılı olaraq assimilyasiyaya uğrayır
     const emphaticGroup = new Set(['ص', 'ض', 'ط', 'ظ']);   // ت → ط (ayrıca qalır): اصطبر
@@ -706,16 +871,16 @@ function generateBabForms(root) {
     }
 
     return [
-        { bab: 'I', arabic: r1 + FATHA + r2 + FATHA + r3 + FATHA, note: 'Əsas fel (bu felin özü)' },
-        { bab: 'II', arabic: r1 + FATHA + r2 + SHADDA + FATHA + r3 + FATHA, note: 'Çox vaxt təsirlilik/intensivlik bildirir' },
-        { bab: 'III', arabic: r1 + FATHA + ALIF + r2 + FATHA + r3 + FATHA, note: 'Çox vaxt qarşılıqlı fəaliyyət bildirir' },
-        { bab: 'IV', arabic: HAMZA + FATHA + r1 + SUKUN + r2 + FATHA + r3 + FATHA, note: 'Çox vaxt etdirmə (kauzativ) bildirir' },
-        { bab: 'V', arabic: TA + FATHA + r1 + FATHA + r2 + SHADDA + FATHA + r3 + FATHA, note: 'Çox vaxt refleksiv (özü üzərində) bildirir' },
-        { bab: 'VI', arabic: TA + FATHA + r1 + FATHA + ALIF + r2 + FATHA + r3 + FATHA, note: 'Çox vaxt qarşılıqlı/bir-birinə bildirir' },
-        { bab: 'VII', arabic: ALIF + KASRA + NUN + SUKUN + r1 + FATHA + r2 + FATHA + r3 + FATHA, note: 'Çox vaxt passiv bildirir' },
-        { bab: 'VIII', arabic: form8, note: 'Çox vaxt refleksiv/qarşılıqlı bildirir' },
-        { bab: 'IX', arabic: ALIF + KASRA + r1 + SUKUN + r2 + FATHA + r3 + SHADDA + FATHA, note: 'Adətən rəng və ya qüsur bildirir' },
-        { bab: 'X', arabic: ALIF + KASRA + SIN + SUKUN + TA + FATHA + r1 + SUKUN + r2 + FATHA + r3 + FATHA, note: 'Çox vaxt "tələb etmək" bildirir' }
+        { bab: 'I', arabic: babOne, note: `Əsas fel — "${m}"` },
+        { bab: 'II', arabic: r1 + FATHA + r2 + SHADDA + FATHA + r3 + FATHA, note: `"${m}" işini gördürmək / kimisə vadar etmək (etdirmə mənası)` },
+        { bab: 'III', arabic: r1 + FATHA + ALIF + r2 + FATHA + r3 + FATHA, note: `Bir-biri ilə "${m}" (qarşılıqlı əlaqə mənası)` },
+        { bab: 'IV', arabic: HAMZA + FATHA + r1 + SUKUN + r2 + FATHA + r3 + FATHA, note: `"${m}" etdirmək, buna səbəb olmaq (etdirici məna)` },
+        { bab: 'V', arabic: TA + FATHA + r1 + FATHA + r2 + SHADDA + FATHA + r3 + FATHA, note: `"${m}" işini öz üzərinə götürmək (refleksiv məna)` },
+        { bab: 'VI', arabic: TA + FATHA + r1 + FATHA + ALIF + r2 + FATHA + r3 + FATHA, note: `Bir-birinə qarşı "${m}" (qarşılıqlı-iştirak mənası)` },
+        { bab: 'VII', arabic: ALIF + KASRA + NUN + SUKUN + r1 + FATHA + r2 + FATHA + r3 + FATHA, note: `"${m}" olunmaq (passiv məna)` },
+        { bab: 'VIII', arabic: form8, note: `Özü üçün "${m}" (refleksiv/iştirak mənası)` },
+        { bab: 'IX', arabic: ALIF + KASRA + r1 + SUKUN + r2 + FATHA + r3 + SHADDA + FATHA, note: `"${m}" rənginə/halına düşmək (rəng və ya qüsur mənası)` },
+        { bab: 'X', arabic: ALIF + KASRA + SIN + SUKUN + TA + FATHA + r1 + SUKUN + r2 + FATHA + r3 + FATHA, note: `"${m}"-i tələb etmək, istəmək` }
     ];
 }
 
@@ -739,14 +904,14 @@ function showAllBabsSection(verbId) {
         return;
     }
 
-    const babs = generateBabForms(root);
+    const babs = generateBabForms(root, verb.meaning, verb.forms.past.arabic);
     const babsHtml = babs.map(b => `
         <div class="rounded-xl mb-2" style="background: rgba(255,255,255,0.05); padding: 12px;">
             <div class="flex-between mb-1">
                 <span class="font-semibold" style="font-size: 0.8rem; color: var(--text-50);">${b.bab} bab</span>
                 <button class="speak-btn-inline" onclick="speakArabicFromEvent(event, '${b.arabic}')" title="Səsləndir">🔊</button>
             </div>
-            <p class="arabic-text mb-1">${displayArabic(b.arabic)}</p>
+            <p class="arabic-text mb-1">${b.arabic}</p>
             <p class="text-white-75" style="font-size: 0.8rem;">${b.note}</p>
         </div>
     `).join('');
@@ -1012,7 +1177,10 @@ function showDialoguesSection(index) {
         <div class="glass-card fade-in">
             <div class="flex-between mb-4">
                 <h2 class="text-2xl font-bold">${dialogue.title}</h2>
-                <button onclick="showMainMenu()" class="close-btn">✕</button>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <button onclick="showDialogueSearch()" class="fav-star-btn" title="Axtar">🔍</button>
+                    <button onclick="showMainMenu()" class="close-btn">✕</button>
+                </div>
             </div>
             <div class="progress-text">${currentDialogueIndex + 1} / ${dialoguesData.length}</div>
             <div class="text-right mb-2">
@@ -1034,6 +1202,61 @@ function showDialoguesSection(index) {
 
 function navigateDialogue(delta) {
     showDialoguesSection(currentDialogueIndex + delta);
+}
+
+// ==================== AXTARIŞ (DİALOQLAR) ====================
+function showDialogueSearch() {
+    const content = document.getElementById('content-area');
+    content.style.display = 'block';
+    document.getElementById('main-menu').style.display = 'none';
+    content.innerHTML = `
+        <div class="glass-card fade-in">
+            <div class="flex-between mb-4">
+                <h2 class="text-xl font-bold">🔍 Dialoq axtar</h2>
+                <button onclick="showDialoguesSection(${currentDialogueIndex})" class="close-btn">✕</button>
+            </div>
+            <input type="text" id="dialogue-search-input" class="input-field mb-4" placeholder="Başlıq, ərəbcə və ya azərbaycanca yazın..." autocomplete="off" oninput="filterDialogueSearch(this.value)">
+            <div id="dialogue-search-results"></div>
+        </div>
+    `;
+    document.getElementById('dialogue-search-input').focus();
+    filterDialogueSearch('');
+}
+
+function filterDialogueSearch(query) {
+    const resultsDiv = document.getElementById('dialogue-search-results');
+    if (!resultsDiv) return;
+    const q = query.trim().toLowerCase();
+    const qNormalized = normalizeArabic(query.trim());
+
+    let matches;
+    if (q === '') {
+        matches = dialoguesData.slice(0, 30);
+    } else {
+        matches = dialoguesData.filter(d =>
+            d.title.toLowerCase().includes(q) ||
+            d.dialogue.some(line =>
+                line.translation.toLowerCase().includes(q) ||
+                (qNormalized && normalizeArabic(line.arabic).includes(qNormalized))
+            )
+        ).slice(0, 60);
+    }
+
+    if (matches.length === 0) {
+        resultsDiv.innerHTML = `<p class="text-white-75 text-center" style="padding: 20px 0;">Nəticə tapılmadı</p>`;
+        return;
+    }
+
+    resultsDiv.innerHTML = matches.map(d => {
+        const idx = dialoguesData.findIndex(x => x.id === d.id);
+        const learned = learnedDialogues.includes(d.id) ? '✓ ' : '';
+        return `
+            <div class="flex-between border-b py-2 clickable" onclick="showDialoguesSection(${idx})">
+                <span>${learned}${d.title}</span>
+                <span class="text-white-75" style="font-size: 0.8rem;">${d.dialogue.length} sətir</span>
+            </div>
+        `;
+    }).join('');
 }
 
 function toggleTranslations(btn) {
@@ -2454,6 +2677,7 @@ function renderSettingsCardHtml() {
                 </label>
             </div>
             <p class="notif-status">Aktiv olanda hərəkələr (fəthə, kəsrə, damma) gizlədilir — orta/yuxarı səviyyə üçün faydalıdır.</p>
+            <button class="glass-button mt-3" onclick="showOnboarding()">👋 Tanışlıq turunu yenidən göstər</button>
         </div>
     `;
 }
@@ -2524,6 +2748,9 @@ checkBadges();
 showMainMenu();
 initNativeBackButton();
 hideSplashScreen();
+if (!hasSeenOnboarding()) {
+    showOnboarding();
+}
 
 // Offline istifadə üçün Service Worker qeydiyyatı (yalnız veb/PWA mühitində — native Capacitor tətbiqinə lazım deyil)
 if (!isCapacitorApp() && typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
